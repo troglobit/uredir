@@ -1,0 +1,54 @@
+.Dd 17 April, 2016
+.Dt UREDIR 1 
+.Os
+.Sh NAME
+.Nm uredir
+.Nd UDP port forward (redirect)
+.Sh SYNOPSIS
+.Nm
+.Op Fl h
+.Ar our-ip
+.Ar our-port
+.Ar send-to-ip
+.Ar send-to-port
+.Sh DESCRIPTION
+.Nm
+is a small tool to redirect UDP packets to another destination.  It has
+been used to successfully test VoIP tool looping back RTP port.
+.Pp
+In a normal mode
+.Nm
+forwards packets to a specified destination and remember a sender's
+address.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl h
+Print a summary of the options and exit
+.It Ar our-ip
+Source IP to bind to, use 0.0.0.0 to bind to `INADDR_ANY`
+.It Ar our-port
+Source port to bind to
+.It Ar send-to-ip
+Destination IP to redirect to
+.It Ar send-to-port
+Destination port
+.El
+.Sh EXAMPLE
+.Nf
+.Rs
+        uredir 0.0.0.0 53 192.168.0.1 53
+        uredir 0.0.0.0 7
+.Re
+.Fi
+.Sh SEE ALSO
+.Xr redir 1
+.Sh BUGS
+Use the project's GitHub page to file bug reports, feature requests or
+patches (preferably as GitHub pull requests!), or questions at
+.Aq https://github.com/troglobit/uredir
+.Sh AUTHORS
+The original author of
+.Nm udp_redirect
+is Ivan Tikhonov.  Current maintainer of
+.Nm
+is Joachim Nilsson.
