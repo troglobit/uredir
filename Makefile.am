@@ -1,9 +1,8 @@
-EXEC            = uredir
 EXTRA_DIST      = configure README.md LICENSE
 doc_DATA        = README.md LICENSE
-dist_man1_MANS  = $(EXEC).1
-bin_PROGRAMS    = $(EXEC)
-netcalc_SOURCES = $(EXEC).c
+dist_man1_MANS  = uredir.1
+bin_PROGRAMS    = uredir
+uredir_SOURCES  = uredir.c
 
 ## Target to run when building a release
 release: dist
