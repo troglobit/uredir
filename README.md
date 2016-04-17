@@ -1,53 +1,36 @@
-udp_redirect - linux udp port forward
-=====================================
+uredir - UDP port redirector
+============================
 
-A small tool to redirect udp packets to another destination. I used it
-to test VoIP tool looping back RTP port.
+`uredir` is a small [zlib][] licensed tool to redirect UDP connections.
+In normal mode it forwards packets to a given destination and remembers
+the sender's address.  Packets received from the given destination are
+sent back to the sender.  Roughly what symmetric NAT does.
 
-In a normal mode udp_redirect forwards packets to a specified
-destination and remember a sender's address.
+In echo mode `uredir` forwards packets back to the sender.
 
-Packets received from a specified destination are sent back to a
-remembered sender. It is mostly what symmetric NAT do.
-
-In an echo mode udp_redirect forwards packets back to a sender.
-
-Tested and used on Linux but should be working on any POSIX system.
-
-
-License
--------
-
-* [zlib](https://en.wikipedia.org/wiki/Zlib_License)
-
-
-Version
--------
-
-2008-11-09
-
-
-Download
---------
-
-* [udp_redirect.c](http://brokestream.com/udp_redirect.html) (1k)
-
-
-Build
------
-
-    gcc -o udp_redirect udp_redirect.c
-
+Tested and used on Linux but should work on any POSIX system.
 
 Usage
 -----
 
-    ./udp_redirect our-ip our-port send-to-ip send-to-port
-    ./udp_redirect our-ip our-port (echo mode)
+    uredir our-ip our-port send-to-ip send-to-port
+    uredir our-ip our-port (echo mode)
 
 
 Example
 -------
 
-    ./udp_redirect 0.0.0.0 53 192.168.0.1 53
-    ./udp_redirect 0.0.0.0 7
+    uredir 0.0.0.0 53 192.168.0.1 53
+    uredir 0.0.0.0 7
+
+
+Origin & Refernces
+------------------
+
+`uredir` is based on [udp_redirect.c][] by Ivan Tikhonov.  All bugs were
+added by Joachim Nilsson, so please report them to [GitHub][].
+
+
+[zlib]: https://en.wikipedia.org/wiki/Zlib_License
+[udp_redirect.c]: http://brokestream.com/udp_redirect.html
+[GitHub]: https://github.com/troglobit/uredir
