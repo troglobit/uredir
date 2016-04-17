@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007-2008  Ivan Tikhonov <kefeer@brokestream.com>
+ * Copyright (C) 2016  Joachim Nilsson <troglobit@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
