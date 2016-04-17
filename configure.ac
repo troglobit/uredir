@@ -10,7 +10,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS(getopt.h stdlib.h sys/socket.h netinet/in.h)
+AC_CHECK_HEADERS(unistd.h stdlib.h sys/socket.h netinet/in.h)
 AC_CHECK_FUNCS(getopt)
 
 AC_OUTPUT
