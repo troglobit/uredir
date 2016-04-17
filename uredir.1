@@ -6,45 +6,51 @@
 .Nd UDP port forward (redirect)
 .Sh SYNOPSIS
 .Nm
-.Op Fl h
-.Ar our-ip
-.Ar our-port
-.Ar send-to-ip
-.Ar send-to-port
+.Op Fl hinv
+.Op Ar SRC:PORT
+.Op Ar DST:PORT
 .Sh DESCRIPTION
 .Nm
-is a small tool to redirect UDP packets to another destination.  It has
-been used to successfully test VoIP tool looping back RTP port.
+is a small tool to redirect UDP traffic.  In a normal mode it forwards
+packets to a specified destination and remember a sender's address, any
+packets received from the destination are in turn forwarded to the
+sender.
 .Pp
-In a normal mode
+In echo mode
 .Nm
-forwards packets to a specified destination and remember a sender's
-address.
+forwards packets back to the sender.
+.Pp
+It is possible to use
+.Nm
+in inetd mode with no arguments, i.e., in echo mode.  That is however
+completely untested.
 .Sh OPTIONS
 .Bl -tag -width Ds
 .It Fl h
 Print a summary of the options and exit
-.It Ar our-ip
-Source IP to bind to, use 0.0.0.0 to bind to `INADDR_ANY`
-.It Ar our-port
-Source port to bind to
-.It Ar send-to-ip
-Destination IP to redirect to
-.It Ar send-to-port
-Destination port
+.It Fl i
+Run in inetd mode, read data from stdin
+.It Fl n
+Run in foreground, do not detach from controlling terminal
+.It Fl v
+Show program version
+.It Ar SRC:PORT
+Source IP and UDP port to bind to, use 0.0.0.0 to bind to `INADDR_ANY`
+.It Ar DST:PORT
+Destination IP and UDP port to redirect to
 .El
 .Sh EXAMPLE
 .Nf
 .Rs
-        uredir 0.0.0.0 53 192.168.0.1 53   # Normal mode
-        uredir 0.0.0.0 7                   # Echo mode
+        uredir 0.0.0.0:53 192.168.0.1:53   # Normal mode
+        uredir 0.0.0.0:7                   # Echo mode
 .Re
 .Fi
 .Sh SEE ALSO
 .Xr redir 1
 .Sh BUGS
 Use the project's GitHub page to file bug reports, feature requests or
-patches (preferably as GitHub pull requests!), or questions at
+patches (preferably as GitHub pull requests), or questions at
 .Aq https://github.com/troglobit/uredir
 .Sh AUTHORS
 The original author of

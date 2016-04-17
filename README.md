@@ -13,15 +13,15 @@ Tested and used on Linux but should work on any POSIX system.
 Usage
 -----
 
-    uredir our-ip our-port send-to-ip send-to-port
-    uredir our-ip our-port (echo mode)
+    uredir [-in] SRC:PORT DST:PORT
+    uredir [-in] SRC:PORT             (echo mode)
 
 
 Example
 -------
 
-    uredir 0.0.0.0 53 192.168.0.1 53
-    uredir 0.0.0.0 7
+    uredir 0.0.0.0:53 192.168.0.1:53
+    uredir 0.0.0.0:7
 
 
 Origin & Refernces
