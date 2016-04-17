@@ -13,19 +13,25 @@ Tested and used on Linux but should work on any POSIX system.
 Usage
 -----
 
-    uredir [-in] SRC:PORT DST:PORT
-    uredir [-in] SRC:PORT             (echo mode)
+    uredir [-hinv] [SRC:PORT] [DST:PORT]
+    
+      -h  Show this help text
+      -i  Run in inetd mode, get SRC:PORT from stdin
+      -n  Run in foreground, do not detach from controlling terminal
+      -v  Show program version
+    
+    If DST:PORT is left out the program operates in echo mode.
 
 
 Example
 -------
 
     uredir 0.0.0.0:53 192.168.0.1:53
-    uredir 0.0.0.0:7
+    uredir 0.0.0.0:7                   # Echo mode
 
 
-Origin & Refernces
-------------------
+Origin & References
+-------------------
 
 `uredir` is based on [udp_redirect.c][] by Ivan Tikhonov.  All bugs were
 added by Joachim Nilsson, so please report them to [GitHub][].
