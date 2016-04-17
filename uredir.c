@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	a.sin_addr.s_addr = inet_addr(argv[1]);
 	a.sin_port = htons(atoi(argv[2]));
 	if (bind(sd, (struct sockaddr *)&a, sizeof(a)) == -1) {
-		printf("Can't bind our address (%s:%s)\n", argv[1], argv[2]);
+		printf("Failed binding our address (%s:%s): %m\n", argv[1], argv[2]);
 		return 1;
 	}
 
