@@ -151,6 +151,7 @@ static int tuby(int sd, struct sockaddr_in *src, struct sockaddr_in *dst)
 int main(int argc, char *argv[])
 {
 	int c, sd, src_port, dst_port;
+	int opt = 0;
 	int log_opts = LOG_CONS | LOG_PID;
 	int loglevel = LOG_NOTICE;
 	char src[20], dst[20];
@@ -248,6 +249,9 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	/* At least on Linux the obnoxious IP_MULTICAST_ALL flag is set by default */
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_ALL, &opt, sizeof(opt));
 
 	while (1) {
 		if (inetd)
