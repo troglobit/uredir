@@ -56,15 +56,16 @@ static int version(void)
 	return 0;
 }
 
+#define USAGE "Usage: %s [-hinsv] [-l LEVEL] [SRC:PORT] [DST:PORT]"
+
 static int usage(int code)
 {
 	if (inetd) {
-		syslog(LOG_ERR, "Usage: %s [-hinv] [-l LEVEL] [SRC:PORT] [DST:PORT]", __progname);
+		syslog(LOG_ERR, USAGE, __progname);
 		return code;
 	}
 
-	printf("\nUsage: %s [-hinv] [-l LEVEL] [SRC:PORT] [DST:PORT]\n\n", __progname);
-
+	printf("\n" USAGE "\n\n", __progname);
 	printf("  -h      Show this help text\n");
 	printf("  -i      Run in inetd mode, get SRC:PORT from stdin\n");
 	printf("  -l LVL  Set log level: none, err, info, notice (default), debug\n");
