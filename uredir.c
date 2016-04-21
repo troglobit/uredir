@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in sa;
 	struct sockaddr_in da;
 
-	while ((c = getopt(argc, argv, "hinv")) != EOF) {
+	while ((c = getopt(argc, argv, "hil:nsv")) != EOF) {
 		switch (c) {
 		case 'h':
 			return usage(0);
