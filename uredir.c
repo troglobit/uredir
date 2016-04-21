@@ -43,6 +43,11 @@ static int version(void)
 
 static int usage(int code)
 {
+	if (inetd) {
+		syslog(LOG_ERR, "Usage: %s [-hinv] [SRC:PORT] [DST:PORT]", __progname);
+		return code;
+	}
+
 	printf("\nUsage: %s [-hinv] [SRC:PORT] [DST:PORT]\n\n", __progname);
 
 	printf("  -h  Show this help text\n");
