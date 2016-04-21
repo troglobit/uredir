@@ -6,7 +6,8 @@
 .Nd UDP port forward (redirect)
 .Sh SYNOPSIS
 .Nm
-.Op Fl hinv
+.Op Fl hinsv
+.Op Fl l Ar LEVEL
 .Op Ar SRC:PORT
 .Op Ar DST:PORT
 .Sh DESCRIPTION
@@ -30,8 +31,13 @@ completely untested.
 Print a summary of the options and exit
 .It Fl i
 Run in inetd mode, read data from stdin
+.It Fl l Ar LVL
+Set log level: none, err, info, notice (default), debug
 .It Fl n
 Run in foreground, do not detach from controlling terminal
+.It Fl s
+Use syslog, even if running in foreground, default w/o
+.Fl n
 .It Fl v
 Show program version
 .It Ar SRC:PORT
