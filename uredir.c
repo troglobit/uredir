@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 			return version();
 
 		default:
-			return usage(1);
+			return usage(-1);
 		}
 	}
 
@@ -171,8 +171,9 @@ int main(int argc, char *argv[])
 		log_opts |= LOG_PERROR;
 	openlog(NULL, log_opts, LOG_DAEMON);
 	setlogmask(LOG_UPTO(LOG_DEBUG));
+
 	if (optind >= argc)
-		return usage(1);
+		return usage(-2);
 
 	if (inetd) {
 		/* In inetd mode we redirect from src=stdin to dst:port */
@@ -181,7 +182,7 @@ int main(int argc, char *argv[])
 		/* By default we need at least src:port */
 		src_port = parse_ipport(argv[optind++], src, sizeof(src));
 		if (-1 == src_port)
-			return usage(1);
+			return usage(-3);
 
 		dst_port = parse_ipport(argv[optind], dst, sizeof(dst));
 	}
