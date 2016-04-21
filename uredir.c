@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -71,11 +72,71 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 	return atoi(ptr);
 }
 
+static int open_udp_socket(void)
+{
+	int sd;
+
+	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	if (sd < 0) {
+		syslog(LOG_ERR, "Failed opening UDP socket: %m");
+		exit(1);
+	}
+
+	return sd;
+}
+
+/*
+ * read from in, forward to out, creating a socket pipe ... or tube
+ *
+ * If no @dst is given then we're in echo mode, send everything back
+ * If no @src is given then we should forward the reply
+ */
+static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *dst)
+{
+	int n;
+	char buf[BUFSIZ], addr[50];
+	struct sockaddr_in sa;
+	static struct sockaddr_in da;
+	socklen_t sn = sizeof(sa);
+
+	syslog(LOG_DEBUG, "Reading %s socket ...", src ? "client" : "proxy");
+	n = recvfrom(in, buf, sizeof(buf), 0, (struct sockaddr *)&sa, &sn);
+	if (n <= 0) {
+		if (n < 0)
+			syslog(LOG_ERR, "Failed receiving data: %m");
+		return 0;
+	}
+
+	syslog(LOG_DEBUG, "Received %d bytes data from %s:%d", n, inet_ntop(AF_INET, &sa.sin_addr, addr, sn), ntohs(sa.sin_port));
+
+	/* Echo mode, return everything to sender */
+	if (!dst)
+		return sendto(in, buf, n, 0, (struct sockaddr *)&sa, sn);
+
+	/* Verify the received packet is the actual reply before we forward it */
+	if (!src) {
+		if (sa.sin_addr.s_addr != da.sin_addr.s_addr || sa.sin_port != da.sin_port)
+			return 0;
+	} else {
+		*src = sa;	/* Tell callee who called */
+		da   = *dst;	/* Remember for forward of reply. */
+	}
+
+	syslog(LOG_DEBUG, "Forwarding %d bytes data to %s:%d", n, inet_ntop(AF_INET, &dst->sin_addr, addr, sizeof(*dst)), ntohs(dst->sin_port));
+	n = sendto(out, buf, n, 0, (struct sockaddr *)dst, sizeof(*dst));
+	if (n <= 0) {
+		if (n < 0)
+			syslog(LOG_ERR, "Failed forwarding data: %m");
+		return 0;
+	}
+
+	return n;
+}
+
 int main(int argc, char *argv[])
 {
 	int c, in, out, src_port, dst_port;
 	char src[20], dst[20];
-	struct sockaddr_in a;
 	struct sockaddr_in sa;
 	struct sockaddr_in da;
 
@@ -116,68 +177,47 @@ int main(int argc, char *argv[])
 	}
 
 	/* If no dst, then user wants to echo everything back to src */
-	if (-1 == dst_port)
+	if (-1 == dst_port) {
 		echo = 1;
-
-	if (inetd && echo) {
-		in = out = STDIN_FILENO;
 	} else {
-		int sd;
+		da.sin_family = AF_INET;
+		da.sin_addr.s_addr = inet_addr(dst);
+		da.sin_port = htons(dst_port);
+	}
 
-		sd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-		if (sd < 0) {
-			perror("Failed opening UDP socket");
+	if (inetd) {
+		in = STDIN_FILENO;
+		if (echo)
+			out = in;
+		else
+			out = open_udp_socket();
+	} else {
+		in = out = open_udp_socket();
+
+		sa.sin_family = AF_INET;
+		sa.sin_addr.s_addr = inet_addr(src);
+		sa.sin_port = htons(src_port);
+		if (bind(in, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
+			syslog(LOG_ERR, "Failed binding our address (%s:%d): %m", src, src_port);
 			return 1;
 		}
 
-		in = out = sd;
-		if (inetd)
-			in = STDIN_FILENO;
-		if (echo)
-			out = sd;
-	}
-
-	if (!inetd) {
 		if (background) {
 			if (-1 == daemon(0, 0)) {
-				perror("Failed daemonizing");
+				syslog(LOG_ERR, "Failed daemonizing: %m");
 				return 2;
 			}
 		}
-
-		a.sin_family = AF_INET;
-		a.sin_addr.s_addr = inet_addr(src);
-		a.sin_port = htons(src_port);
-		if (bind(in, (struct sockaddr *)&a, sizeof(a)) == -1) {
-			printf("Failed binding our address (%s:%d): %m\n", src, src_port);
-			return 1;
-		}
 	}
 
-	if (dst_port != -1) {
-		a.sin_addr.s_addr = inet_addr(dst);
-		a.sin_port = htons(dst_port);
-	}
-
-	da.sin_addr.s_addr = 0;
 	while (1) {
-		int n;
-		char buf[BUFSIZ];
-		socklen_t sn = sizeof(sa);
+		if (echo)
+			tuby(in, in, NULL, NULL);
+		else if (tuby(in, out, &sa, &da))
+			tuby(out, in, NULL, &sa);
 
-		n = recvfrom(in, buf, sizeof(buf), 0, (struct sockaddr *)&sa, &sn);
-		if (n <= 0)
-			continue;
-
-		if (echo) {
-			sendto(in, buf, n, 0, (struct sockaddr *)&sa, sizeof(sa));
-		} else if (sa.sin_addr.s_addr == a.sin_addr.s_addr && sa.sin_port == a.sin_port) {
-			if (da.sin_addr.s_addr)
-				sendto(out, buf, n, 0, (struct sockaddr *)&da, sizeof(da));
-		} else {
-			sendto(out, buf, n, 0, (struct sockaddr *)&a, sizeof(a));
-			da = sa;
-		}
+		if (inetd)
+			break;
 	}
 
 	return 0;
