@@ -34,6 +34,7 @@
 static int echo       = 0;
 static int inetd      = 0;
 static int background = 1;
+static int do_syslog  = 1;
 extern char *__progname;
 
 static int loglvl(char *level)
@@ -67,6 +68,7 @@ static int usage(int code)
 	printf("  -i      Run in inetd mode, get SRC:PORT from stdin\n");
 	printf("  -l LVL  Set log level: none, err, info, notice (default), debug\n");
 	printf("  -n      Run in foreground, do not detach from controlling terminal\n");
+	printf("  -s      Use syslog, even if running in foreground, default w/o -n\n");
 	printf("  -v      Show program version\n\n");
 	printf("If DST:PORT is left out the program operates in echo mode.\n"
 	       "Bug report address: %-40s\n\n", PACKAGE_BUGREPORT);
@@ -178,6 +180,11 @@ int main(int argc, char *argv[])
 
 		case 'n':
 			background = 0;
+			do_syslog--;
+			break;
+
+		case 's':
+			do_syslog++;
 			break;
 
 		case 'v':
@@ -188,7 +195,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!background)
+	if (!background && do_syslog < 1)
 		log_opts |= LOG_PERROR;
 	openlog(NULL, log_opts, LOG_DAEMON);
 	setlogmask(LOG_UPTO(loglevel));
