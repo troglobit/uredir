@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#define SYSLOG_NAMES
 #include <syslog.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -35,6 +36,18 @@ static int inetd      = 0;
 static int background = 1;
 extern char *__progname;
 
+static int loglvl(char *level)
+{
+	int i;
+
+	for (i = 0; prioritynames[i].c_name; i++) {
+		if (!strcmp(prioritynames[i].c_name, level))
+			return prioritynames[i].c_val;
+	}
+
+	return atoi(level);
+}
+
 static int version(void)
 {
 	printf("%s\n", PACKAGE_VERSION);
@@ -44,16 +57,17 @@ static int version(void)
 static int usage(int code)
 {
 	if (inetd) {
-		syslog(LOG_ERR, "Usage: %s [-hinv] [SRC:PORT] [DST:PORT]", __progname);
+		syslog(LOG_ERR, "Usage: %s [-hinv] [-l LEVEL] [SRC:PORT] [DST:PORT]", __progname);
 		return code;
 	}
 
-	printf("\nUsage: %s [-hinv] [SRC:PORT] [DST:PORT]\n\n", __progname);
+	printf("\nUsage: %s [-hinv] [-l LEVEL] [SRC:PORT] [DST:PORT]\n\n", __progname);
 
-	printf("  -h  Show this help text\n");
-	printf("  -i  Run in inetd mode, get SRC:PORT from stdin\n");
-	printf("  -n  Run in foreground, do not detach from controlling terminal\n");
-	printf("  -v  Show program version\n\n");
+	printf("  -h      Show this help text\n");
+	printf("  -i      Run in inetd mode, get SRC:PORT from stdin\n");
+	printf("  -l LVL  Set log level: none, err, info, notice (default), debug\n");
+	printf("  -n      Run in foreground, do not detach from controlling terminal\n");
+	printf("  -v      Show program version\n\n");
 	printf("If DST:PORT is left out the program operates in echo mode.\n"
 	       "Bug report address: %-40s\n\n", PACKAGE_BUGREPORT);
 
@@ -142,6 +156,7 @@ int main(int argc, char *argv[])
 {
 	int c, in, out, src_port, dst_port;
 	int log_opts = LOG_CONS | LOG_PID;
+	int loglevel = LOG_NOTICE;
 	char src[20], dst[20];
 	struct sockaddr_in sa;
 	struct sockaddr_in da;
@@ -153,6 +168,12 @@ int main(int argc, char *argv[])
 
 		case 'i':
 			inetd = 1;
+			break;
+
+		case 'l':
+			loglevel = loglvl(optarg);
+			if (-1 == loglevel)
+				return usage(1);
 			break;
 
 		case 'n':
@@ -170,7 +191,7 @@ int main(int argc, char *argv[])
 	if (!background)
 		log_opts |= LOG_PERROR;
 	openlog(NULL, log_opts, LOG_DAEMON);
-	setlogmask(LOG_UPTO(LOG_DEBUG));
+	setlogmask(LOG_UPTO(loglevel));
 
 	if (optind >= argc)
 		return usage(-2);
