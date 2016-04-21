@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -91,6 +92,12 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 	snprintf(buf, len, "%s", arg);
 
 	return atoi(ptr);
+}
+
+static void exit_cb(int signo)
+{
+	syslog(LOG_DEBUG, "Got signal %d, exiting.", signo);
+	exit(0);
 }
 
 /*
@@ -190,6 +197,12 @@ int main(int argc, char *argv[])
 	if (optind >= argc)
 		return usage(-2);
 
+	signal(SIGALRM, exit_cb);
+	signal(SIGHUP,  exit_cb);
+	signal(SIGINT,  exit_cb);
+	signal(SIGQUIT, exit_cb);
+	signal(SIGTERM, exit_cb);
+
 	if (inetd) {
 		/* In inetd mode we redirect from src=stdin to dst:port */
 		dst_port = parse_ipport(argv[optind], dst, sizeof(dst));
@@ -237,13 +250,13 @@ int main(int argc, char *argv[])
 	}
 
 	while (1) {
+		if (inetd)
+			alarm(3);
+
 		if (echo)
 			tuby(sd, NULL, NULL);
 		else if (tuby(sd, &sa, &da))
 			tuby(sd, NULL, &sa);
-
-		if (inetd)
-			break;
 	}
 
 	return 0;
