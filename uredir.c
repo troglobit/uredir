@@ -93,26 +93,13 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 	return atoi(ptr);
 }
 
-static int open_udp_socket(void)
-{
-	int sd;
-
-	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-	if (sd < 0) {
-		syslog(LOG_ERR, "Failed opening UDP socket: %m");
-		exit(1);
-	}
-
-	return sd;
-}
-
 /*
  * read from in, forward to out, creating a socket pipe ... or tube
  *
  * If no @dst is given then we're in echo mode, send everything back
  * If no @src is given then we should forward the reply
  */
-static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *dst)
+static int tuby(int sd, struct sockaddr_in *src, struct sockaddr_in *dst)
 {
 	int n;
 	char buf[BUFSIZ], addr[50];
@@ -121,7 +108,7 @@ static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *ds
 	socklen_t sn = sizeof(sa);
 
 	syslog(LOG_DEBUG, "Reading %s socket ...", src ? "client" : "proxy");
-	n = recvfrom(in, buf, sizeof(buf), 0, (struct sockaddr *)&sa, &sn);
+	n = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr *)&sa, &sn);
 	if (n <= 0) {
 		if (n < 0)
 			syslog(LOG_ERR, "Failed receiving data: %m");
@@ -132,7 +119,7 @@ static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *ds
 
 	/* Echo mode, return everything to sender */
 	if (!dst)
-		return sendto(in, buf, n, 0, (struct sockaddr *)&sa, sn);
+		return sendto(sd, buf, n, 0, (struct sockaddr *)&sa, sn);
 
 	/* Verify the received packet is the actual reply before we forward it */
 	if (!src) {
@@ -144,7 +131,7 @@ static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *ds
 	}
 
 	syslog(LOG_DEBUG, "Forwarding %d bytes data to %s:%d", n, inet_ntop(AF_INET, &dst->sin_addr, addr, sizeof(*dst)), ntohs(dst->sin_port));
-	n = sendto(out, buf, n, 0, (struct sockaddr *)dst, sizeof(*dst));
+	n = sendto(sd, buf, n, 0, (struct sockaddr *)dst, sizeof(*dst));
 	if (n <= 0) {
 		if (n < 0)
 			syslog(LOG_ERR, "Failed forwarding data: %m");
@@ -156,7 +143,7 @@ static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *ds
 
 int main(int argc, char *argv[])
 {
-	int c, in, out, src_port, dst_port;
+	int c, sd, src_port, dst_port;
 	int log_opts = LOG_CONS | LOG_PID;
 	int loglevel = LOG_NOTICE;
 	char src[20], dst[20];
@@ -225,18 +212,18 @@ int main(int argc, char *argv[])
 	}
 
 	if (inetd) {
-		in = STDIN_FILENO;
-		if (echo)
-			out = in;
-		else
-			out = open_udp_socket();
+		sd = STDIN_FILENO;
 	} else {
-		in = out = open_udp_socket();
+		sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+		if (sd < 0) {
+			syslog(LOG_ERR, "Failed opening UDP socket: %m");
+			return 1;
+		}
 
 		sa.sin_family = AF_INET;
 		sa.sin_addr.s_addr = inet_addr(src);
 		sa.sin_port = htons(src_port);
-		if (bind(in, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
+		if (bind(sd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
 			syslog(LOG_ERR, "Failed binding our address (%s:%d): %m", src, src_port);
 			return 1;
 		}
@@ -251,9 +238,9 @@ int main(int argc, char *argv[])
 
 	while (1) {
 		if (echo)
-			tuby(in, in, NULL, NULL);
-		else if (tuby(in, out, &sa, &da))
-			tuby(out, in, NULL, &sa);
+			tuby(sd, NULL, NULL);
+		else if (tuby(sd, &sa, &da))
+			tuby(sd, NULL, &sa);
 
 		if (inetd)
 			break;
