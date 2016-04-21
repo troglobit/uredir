@@ -141,6 +141,7 @@ static int tuby(int in, int out, struct sockaddr_in *src, struct sockaddr_in *ds
 int main(int argc, char *argv[])
 {
 	int c, in, out, src_port, dst_port;
+	int log_opts = LOG_CONS | LOG_PID;
 	char src[20], dst[20];
 	struct sockaddr_in sa;
 	struct sockaddr_in da;
@@ -166,6 +167,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!background)
+		log_opts |= LOG_PERROR;
+	openlog(NULL, log_opts, LOG_DAEMON);
+	setlogmask(LOG_UPTO(LOG_DEBUG));
 	if (optind >= argc)
 		return usage(1);
 
