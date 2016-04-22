@@ -1,12 +1,17 @@
-uredir - UDP port redirector
-============================
+UDP port redirector
+===================
 
 `uredir` is a small [zlib][] licensed tool to redirect UDP connections.
-In normal mode it forwards packets to a given destination and remembers
-the sender's address.  Packets received from the given destination are
-sent back to the sender.  Roughly what symmetric NAT does.
+It can be used to forward connections on select external interfaces to
+loopback.
 
-In echo mode `uredir` mirrors packets back to the sender.
+- In normal mode it forwards packets to a given destination and
+  remembers the sender's address.  Packets received from the given
+  destination are forwarded to the sender.
+- In echo mode `uredir` mirrors packets back to the sender.
+- In inetd mode `uredir` lingers for three (3) seconds after forwarding
+  a reply.  This to prevent inetd from spawning new instances for
+  multiple connections, e.g. an SNMP walk.
 
 Tested and used on Linux but should work on any POSIX system.
 
@@ -46,6 +51,6 @@ Origin & References
 added by Joachim Nilsson, so please report them to [GitHub][].
 
 
-[zlib]: https://en.wikipedia.org/wiki/Zlib_License
+[zlib]:           https://en.wikipedia.org/wiki/Zlib_License
+[GitHub]:         https://github.com/troglobit/uredir
 [udp_redirect.c]: http://brokestream.com/udp_redirect.html
-[GitHub]: https://github.com/troglobit/uredir
