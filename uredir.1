@@ -3,7 +3,7 @@
 .Os
 .Sh NAME
 .Nm uredir
-.Nd UDP port forward (redirect)
+.Nd UDP port redirector
 .Sh SYNOPSIS
 .Nm
 .Op Fl hinsv
@@ -12,18 +12,30 @@
 .Op Ar DST:PORT
 .Sh DESCRIPTION
 .Nm
-is a small tool to redirect UDP traffic.  In a normal mode it forwards
-packets to a specified destination and remember a sender's address, any
-packets received from the destination are in turn forwarded to the
-sender.
+is a small tool to redirect UDP traffic.  It can be used as a poor man's
+filtering tool, e.g. for small multihomed embedded systems without a
+built-in firewall.
+.Pp
+In a normal mode it forwards packets to a specified destination
+remembering the sender's address, any packets received from the
+destination are in turn forwarded to the sender.
 .Pp
 In echo mode
 .Nm
-forwards packets back to the sender.
+mirrors packets back to the sender.
+.Pp
+When
+.Nm
+is launched from
+.Xr inetd 8
+it does not immediately exit when the first reply has been forwarded.
+Instead it lingers for three (3) seconds in case more requests are
+received, e.g. in the case of an SNMP walk.  This helps conserve
+precious system resources, useful in particular on embedded systems.
 .Pp
 It is possible to use
 .Nm
-in inetd mode with no arguments, i.e., in echo mode.  That is however
+in inetd mode with no arguments, i.e., in echo mode.  Which is
 completely untested.
 .Sh OPTIONS
 .Bl -tag -width Ds
@@ -54,6 +66,7 @@ Destination IP and UDP port to redirect to
 .Fi
 .Sh SEE ALSO
 .Xr redir 1
+.Xr inetd 8
 .Sh BUGS
 Use the project's GitHub page to file bug reports, feature requests or
 patches -- preferably as pull requests
