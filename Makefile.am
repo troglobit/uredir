@@ -1,8 +1,8 @@
-EXTRA_DIST      = configure README.md LICENSE
-doc_DATA        = README.md LICENSE
-dist_man1_MANS  = uredir.1
 bin_PROGRAMS    = uredir
 uredir_SOURCES  = uredir.c
+dist_man1_MANS  = uredir.1
+doc_DATA        = README.md LICENSE
+EXTRA_DIST      = $(doc_DATA)
 
 ## Target to run when building a release
 release: dist
