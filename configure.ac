@@ -1,4 +1,4 @@
-AC_INIT([uredir], [1.1-dev], [https://github.com/troglobit/uredir/issues])
+AC_INIT([uredir], [2.0], [https://github.com/troglobit/uredir/issues])
 AM_INIT_AUTOMAKE([1.11 foreign])
 
 AC_CONFIG_SRCDIR([uredir.c])
