@@ -51,6 +51,8 @@ Origin & References
 `uredir` is based on [udp_redirect.c][] by Ivan Tikhonov.  All bugs were
 added by Joachim Nilsson, so please report them to [GitHub][].
 
+`uredir` was heavily inspired by redir(1), originally by Sam Creasey but
+now also maintained by me.
 
 [zlib]:           https://en.wikipedia.org/wiki/Zlib_License
 [GitHub]:         https://github.com/troglobit/uredir
