@@ -15,6 +15,7 @@ loopback.
 
 Tested and used on Linux but should work on any POSIX system.
 
+For a TCP port redirector, see [redir](https://github.com/troglobit/redir/).
 
 Usage
 -----
