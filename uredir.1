@@ -60,7 +60,7 @@ Show program version
 .It Ar SRC:PORT
 Source IP and UDP port to bind to, use 0.0.0.0 to bind to `INADDR_ANY`
 .It Ar DST:PORT
-Destination IP and UDP port to redirect to
+Destination IP and UDP port to redirect to.
 .El
 .Sh EXAMPLE
 .Nf
@@ -68,6 +68,17 @@ Destination IP and UDP port to redirect to
         uredir 0.0.0.0:53 192.168.0.1:53   # Normal mode
         uredir 0.0.0.0:7                   # Echo mode
 .Re
+.Pp
+To run
+.Nm
+in inetd mode, e.g. to redirect SNMP requests, try the following:
+.Pp
+.Rs
+        snmp dgram udp wait root uredir -n -s -i 127.0.0.1:16161
+.Re
+.Pp
+Syntax may vary between different inetd implementations and UNIX
+distributions.
 .Fi
 .Sh SEE ALSO
 .Xr redir 1
