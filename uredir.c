@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
 	if (!background && do_syslog < 1)
 		log_opts |= LOG_PERROR;
-	openlog(NULL, log_opts, LOG_DAEMON);
+	openlog(__progname, log_opts, LOG_DAEMON);
 	setlogmask(LOG_UPTO(loglevel));
 
 	if (optind >= argc)
