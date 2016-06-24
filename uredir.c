@@ -56,7 +56,7 @@ static int version(void)
 	return 0;
 }
 
-#define USAGE "Usage: %s [-hinsv] [-l LEVEL] [SRC:PORT] [DST:PORT]"
+#define USAGE "Usage: %s [-hinsv] [-I NAME] [-l LEVEL] [SRC:PORT] [DST:PORT]"
 
 static int usage(int code)
 {
@@ -68,6 +68,7 @@ static int usage(int code)
 	printf("\n" USAGE "\n\n", __progname);
 	printf("  -h      Show this help text\n");
 	printf("  -i      Run in inetd mode, get SRC:PORT from stdin\n");
+	printf("  -I NAME Identity, tag syslog messages with NAME, default: process name\n");
 	printf("  -l LVL  Set log level: none, err, info, notice (default), debug\n");
 	printf("  -n      Run in foreground, do not detach from controlling terminal\n");
 	printf("  -s      Use syslog, even if running in foreground, default w/o -n\n");
@@ -155,17 +156,22 @@ int main(int argc, char *argv[])
 	int opt = 0;
 	int log_opts = LOG_CONS | LOG_PID;
 	int loglevel = LOG_NOTICE;
+	char *ident = __progname;
 	char src[20], dst[20];
 	struct sockaddr_in sa;
 	struct sockaddr_in da;
 
-	while ((c = getopt(argc, argv, "hil:nsv")) != EOF) {
+	while ((c = getopt(argc, argv, "hiI:l:nsv")) != EOF) {
 		switch (c) {
 		case 'h':
 			return usage(0);
 
 		case 'i':
 			inetd = 1;
+			break;
+
+		case 'I':
+			ident = strdup(optarg);
 			break;
 
 		case 'l':
@@ -193,7 +199,7 @@ int main(int argc, char *argv[])
 
 	if (!background && do_syslog < 1)
 		log_opts |= LOG_PERROR;
-	openlog(__progname, log_opts, LOG_DAEMON);
+	openlog(ident, log_opts, LOG_DAEMON);
 	setlogmask(LOG_UPTO(loglevel));
 
 	if (optind >= argc)
