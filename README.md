@@ -41,22 +41,35 @@ Command line examples:
     uredir 0.0.0.0:53 192.168.0.1:53
     uredir 0.0.0.0:7                   # Echo mode
 
+To run `uredir` from a process monitor like [Finit][] or systemd, tell it
+to not background itself and to only use the syslog for log messages:
+
+    uredir -n -s :53 127.0.0.1:53
+
 Inetd example:
 
-    snmp	dgram	udp	wait	root	/usr/sbin/tcpd /usr/local/bin/uredir -i 127.0.0.1:16161
+    snmp  dgram  udp  wait  root  /usr/sbin/tcpd /usr/local/bin/uredir -i 127.0.0.1:16161
 
 
 Origin & References
 -------------------
 
 `uredir` is based on [udp_redirect.c][] by Ivan Tikhonov.  All bugs were
-added by Joachim Nilsson, so please report them to [GitHub][].
+added by [Joachim Nilsson][], so please report them to [GitHub][].
 
 `uredir` was heavily inspired by redir(1), originally by Sam Creasey but
 now also maintained by me.
 
-[zlib]:           https://en.wikipedia.org/wiki/Zlib_License
-[GitHub]:         https://github.com/troglobit/uredir
-[udp_redirect.c]: http://brokestream.com/udp_redirect.html
+[zlib]:            https://en.wikipedia.org/wiki/Zlib_License
+[Finit]:           https://github.com/troglobit/finit
+[GitHub]:          https://github.com/troglobit/uredir
+[udp_redirect.c]:  http://brokestream.com/udp_redirect.html
+[Joachim Nilsson]: http://troglobit.com
 [Travis]:          https://travis-ci.org/troglobit/uredir
 [Travis Status]:   https://travis-ci.org/troglobit/uredir.png?branch=master
+
+<!--
+  -- Local Variables:
+  -- mode: markdown
+  -- End:
+  -->
