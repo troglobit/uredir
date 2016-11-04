@@ -1,5 +1,6 @@
 UDP port redirector
 ===================
+[![Travis Status][]][Travis]
 
 `uredir` is a small [zlib][] licensed tool to redirect UDP connections.
 It can be used to forward connections on select external interfaces to
@@ -57,3 +58,5 @@ now also maintained by me.
 [zlib]:           https://en.wikipedia.org/wiki/Zlib_License
 [GitHub]:         https://github.com/troglobit/uredir
 [udp_redirect.c]: http://brokestream.com/udp_redirect.html
+[Travis]:          https://travis-ci.org/troglobit/uredir
+[Travis Status]:   https://travis-ci.org/troglobit/uredir.png?branch=master
