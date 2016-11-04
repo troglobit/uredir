@@ -36,7 +36,7 @@ static int echo       = 0;
 static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
-extern char *__progname;
+static char *prognm   = PACKAGE_NAME;
 
 static int loglvl(char *level)
 {
@@ -61,11 +61,11 @@ static int version(void)
 static int usage(int code)
 {
 	if (inetd) {
-		syslog(LOG_ERR, USAGE, __progname);
+		syslog(LOG_ERR, USAGE, prognm);
 		return code;
 	}
 
-	printf("\n" USAGE "\n\n", __progname);
+	printf("\n" USAGE "\n\n", prognm);
 	printf("  -h      Show this help text\n");
 	printf("  -i      Run in inetd mode, get SRC:PORT from stdin\n");
 	printf("  -I NAME Identity, tag syslog messages with NAME, default: process name\n");
@@ -150,17 +150,31 @@ static int tuby(int sd, struct sockaddr_in *src, struct sockaddr_in *dst)
 	return n;
 }
 
+static char *progname(char *arg0)
+{
+	char *nm;
+
+	nm = strrchr(arg0, '/');
+	if (nm)
+		nm++;
+	else
+		nm = arg0;
+
+	return nm;
+}
+
 int main(int argc, char *argv[])
 {
 	int c, sd, src_port, dst_port;
 	int opt = 0;
 	int log_opts = LOG_CONS | LOG_PID;
 	int loglevel = LOG_NOTICE;
-	char *ident = __progname;
+	char *ident;
 	char src[20], dst[20];
 	struct sockaddr_in sa;
 	struct sockaddr_in da;
 
+	ident = prognm = progname(argv[0]);
 	while ((c = getopt(argc, argv, "hiI:l:nsv")) != EOF) {
 		switch (c) {
 		case 'h':
