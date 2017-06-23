@@ -163,7 +163,7 @@ static struct conn *conn_new(struct msghdr *hdr)
 	c->remote = hdr->msg_name;
 	hdr_extract_da(hdr, &c->local);
 
-	c->sd = socket(AF_INET, SOCK_DGRAM, 0);
+	c->sd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
 	if (c->sd < 0)
 		return NULL;
 
@@ -212,7 +212,7 @@ static int outer_init(struct sockaddr_in *addr)
 {
 	int sd, on = 1;
 
-	sd = socket(AF_INET, SOCK_DGRAM, 0);
+	sd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
 	if (sd < 0)
 		return -1;
 
