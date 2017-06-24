@@ -188,8 +188,10 @@ static struct conn *conn_new(struct msghdr *hdr)
 	if (c->sd < 0)
 		return NULL;
 
-	if (connect(c->sd, (struct sockaddr *)&inner, sizeof(inner)))
+	if (connect(c->sd, (struct sockaddr *)&inner, sizeof(inner))) {
+		close(c->sd);
 		return NULL;
+	}
 
 	LIST_INSERT_HEAD(&conns, c, list);
 
