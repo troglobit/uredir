@@ -55,6 +55,8 @@ struct conn {
 };
 
 LIST_HEAD(connhead, conn) conns;
+#define conn_foreach(_c) LIST_FOREACH(_c, &conns, list)
+
 
 struct msghdr *hdr_new(void)
 {
@@ -108,8 +110,6 @@ struct in_addr *hdr_extract_da(struct msghdr *hdr)
 
 	return NULL;
 }
-
-#define conn_foreach(_c) for((_c) = conns.lh_first; (_c); (_c) = (_c)->list.le_next)
 
 static void conn_dump(struct conn *c, FILE *fp)
 {
