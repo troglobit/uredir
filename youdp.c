@@ -56,7 +56,8 @@ struct conn {
 
 LIST_HEAD(connhead, conn) conns;
 
-struct msghdr *hdr_new(void) {
+struct msghdr *hdr_new(void)
+{
 	struct msghdr *hdr;
 
 	hdr = malloc(sizeof(*hdr));
@@ -77,6 +78,7 @@ struct msghdr *hdr_new(void) {
 	hdr->msg_iov->iov_base = malloc(BUFSIZ);
 	hdr->msg_iov->iov_len = BUFSIZ;
 	assert(hdr->msg_iov->iov_base);
+
 	return hdr;
 }
 
@@ -100,8 +102,7 @@ void hdr_extract_da(struct msghdr *hdr, struct in_addr **da)
 	}
 
 	for (cmsg = CMSG_FIRSTHDR(hdr); cmsg; cmsg = CMSG_NXTHDR(hdr, cmsg)) {
-		if (cmsg->cmsg_level == IPPROTO_IP &&
-		    cmsg->cmsg_type  == IP_PKTINFO) {
+		if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
 			pktinfo = (struct in_pktinfo *)CMSG_DATA(cmsg);
 			*da = &pktinfo->ipi_spec_dst;
 			return;
@@ -109,16 +110,13 @@ void hdr_extract_da(struct msghdr *hdr, struct in_addr **da)
 	}
 
 	*da = NULL;
-	return;
 }
 
 #define conn_foreach(_c) for((_c) = conns.lh_first; (_c); (_c) = (_c)->list.le_next)
 
 static void conn_dump(struct conn *c, FILE *fp)
 {
-	fprintf(fp, "remote:%s:%u ",
-		inet_ntoa(c->remote->sin_addr), ntohs(c->remote->sin_port));
-
+	fprintf(fp, "remote:%s:%u ", inet_ntoa(c->remote->sin_addr), ntohs(c->remote->sin_port));
 	fprintf(fp, "local:%s sd:%d\n", inet_ntoa(*(c->local)), c->sd);
 }
 
@@ -129,7 +127,8 @@ static void conn_to_outer(EV_P_ ev_io *w, int revents)
 
 	(void)(revents);
 
-	_d(""); conn_dump(c, stderr);
+	_d("");
+	conn_dump(c, stderr);
 
 	n = recv(c->sd, c->hdr->msg_iov->iov_base, BUFSIZ, 0);
 	if (n <= 0) {
@@ -143,7 +142,8 @@ static void conn_to_outer(EV_P_ ev_io *w, int revents)
 
 static void conn_to_inner(struct conn *c, struct msghdr *hdr)
 {
-	_d(""); conn_dump(c, stderr);
+	_d("");
+	conn_dump(c, stderr);
 
 	send(c->sd, hdr->msg_iov->iov_base, hdr->msg_iov->iov_len, 0);
 }
@@ -158,14 +158,14 @@ static struct conn *conn_find(struct msghdr *hdr)
 
 	conn_foreach(c) {
 		if (c->remote->sin_addr.s_addr == remote->sin_addr.s_addr &&
-		    c->remote->sin_port == remote->sin_port &&
-		    c->local->s_addr == local->s_addr) {
+		    c->remote->sin_port        == remote->sin_port        &&
+		    c->local->s_addr           == local->s_addr) {
 			_d("found\n");
 			return c;
 		}
 	}
-
 	_d("missing\n");
+
 	return NULL;
 }
 
@@ -190,9 +190,11 @@ static struct conn *conn_new(struct msghdr *hdr)
 	LIST_INSERT_HEAD(&conns, c, list);
 
 	ev_io_init(&c->watcher, conn_to_outer, c->sd, EV_READ);
-	ev_io_start (EV_DEFAULT, &c->watcher);
+	ev_io_start(EV_DEFAULT, &c->watcher);
 
-	_d(""); conn_dump(c, stderr);
+	_d("");
+	conn_dump(c, stderr);
+
 	return c;
 }
 
@@ -241,11 +243,12 @@ static int outer_init(struct sockaddr_in *addr)
 
 	_d("ready\n");
 	ev_io_init(&outer_watcher, outer_to_inner, sd, EV_READ);
-	ev_io_start (EV_DEFAULT, &outer_watcher);
+	ev_io_start(EV_DEFAULT, &outer_watcher);
+
 	return 0;
 }
 
-int main (void)
+int main(void)
 {
 	struct sockaddr_in addr = { 0 };
 	int err;
@@ -260,6 +263,14 @@ int main (void)
 	if (err)
 		exit(1);
 
-	ev_run (EV_DEFAULT, 0);
+	ev_run(EV_DEFAULT, 0);
+
 	return 0;
 }
+
+/**
+ * Local Variables:
+ *  indent-tabs-mode: t
+ *  c-file-style: "linux"
+ * End:
+ */
