@@ -91,25 +91,22 @@ void hdr_free(struct msghdr *hdr)
 	free(hdr);
 }
 
-void hdr_extract_da(struct msghdr *hdr, struct in_addr **da)
+struct in_addr *hdr_extract_da(struct msghdr *hdr)
 {
 	struct in_pktinfo *pktinfo;
 	struct cmsghdr *cmsg;
 
-	if (!hdr->msg_controllen) {
-		*da = NULL;
-		return;
-	}
+	if (!hdr->msg_controllen)
+		return NULL;
 
 	for (cmsg = CMSG_FIRSTHDR(hdr); cmsg; cmsg = CMSG_NXTHDR(hdr, cmsg)) {
 		if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
 			pktinfo = (struct in_pktinfo *)CMSG_DATA(cmsg);
-			*da = &pktinfo->ipi_spec_dst;
-			return;
+			return &pktinfo->ipi_spec_dst;
 		}
 	}
 
-	*da = NULL;
+	return NULL;
 }
 
 #define conn_foreach(_c) for((_c) = conns.lh_first; (_c); (_c) = (_c)->list.le_next)
@@ -154,7 +151,11 @@ static struct conn *conn_find(struct msghdr *hdr)
 	struct in_addr *local;
 	struct conn *c;
 
-	hdr_extract_da(hdr, &local);
+	local = hdr_extract_da(hdr);
+	if (!local) {
+		_d("missing\n");
+		return NULL;
+	}
 
 	conn_foreach(c) {
 		if (c->remote->sin_addr.s_addr == remote->sin_addr.s_addr &&
@@ -178,7 +179,10 @@ static struct conn *conn_new(struct msghdr *hdr)
 
 	c->hdr = hdr;
 	c->remote = hdr->msg_name;
-	hdr_extract_da(hdr, &c->local);
+
+	c->local = hdr_extract_da(hdr);
+	if (!c->local)
+		return NULL;
 
 	c->sd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
 	if (c->sd < 0)
