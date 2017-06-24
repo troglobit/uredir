@@ -213,18 +213,16 @@ static void outer_to_inner(EV_P_ ev_io *w, int revents)
 		exit(1);
 
 	c = conn_find(hdr);
-	if (c) {
-		conn_to_inner(c, hdr);
-		hdr_free(hdr);
-	} else {
+	if (!c) {
 		c = conn_new(hdr);
 		if (!c) {
 			hdr_free(hdr);
 			return;
 		}
-
-		conn_to_inner(c, hdr);
 	}
+
+	conn_to_inner(c, hdr);
+	hdr_free(hdr);
 }
 
 static int outer_init(struct sockaddr_in *addr)
