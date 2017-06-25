@@ -2,7 +2,7 @@ UDP port redirector
 ===================
 [![Travis Status][]][Travis]
 
-`uredir` is a small [zlib][] licensed tool to redirect UDP connections.
+`uredir` is a small [ISC][] licensed tool to redirect UDP connections.
 It can be used to forward connections on select external interfaces to
 loopback.
 
@@ -17,6 +17,7 @@ loopback.
 Tested and used on Linux but should work on any POSIX system.
 
 For a TCP port redirector, see [redir](https://github.com/troglobit/redir/).
+
 
 Usage
 -----
@@ -39,7 +40,6 @@ Example
 Command line examples:
 
     uredir 0.0.0.0:53 192.168.0.1:53
-    uredir 0.0.0.0:7                   # Echo mode
 
 To run `uredir` from a process monitor like [Finit][] or systemd, tell it
 to not background itself and to only use the syslog for log messages:
@@ -54,19 +54,24 @@ Inetd example:
 Origin & References
 -------------------
 
-`uredir` is based on [udp_redirect.c][] by Ivan Tikhonov.  All bugs were
-added by [Joachim Nilsson][], so please report them to [GitHub][].
+`uredir` was originally based on [udp_redirect.c][] by Ivan Tikhonov.
+For v3.0 the `tuby()` backend was replaced with the `youdp.c`, written
+by [Tobias Waldekranz][].  The project then also changed license from
+zlib to ISC.  The project is actively maintained by [Joachim Nilsson][]
+at [GitHub][], please use its interface for reporting bugs and an pull
+requests.
 
 `uredir` was heavily inspired by redir(1), originally by Sam Creasey but
-now also maintained by me.
+now also maintained by Joachim.
 
-[zlib]:            https://en.wikipedia.org/wiki/Zlib_License
-[Finit]:           https://github.com/troglobit/finit
-[GitHub]:          https://github.com/troglobit/uredir
-[udp_redirect.c]:  http://brokestream.com/udp_redirect.html
-[Joachim Nilsson]: http://troglobit.com
-[Travis]:          https://travis-ci.org/troglobit/uredir
-[Travis Status]:   https://travis-ci.org/troglobit/uredir.png?branch=master
+[ISC]:               https://en.wikipedia.org/wiki/ISC_license
+[Finit]:             https://github.com/troglobit/finit
+[GitHub]:            https://github.com/troglobit/uredir
+[udp_redirect.c]:    http://brokestream.com/udp_redirect.html
+[Joachim Nilsson]:   http://troglobit.com
+[Tobias Waldekranz]: https://github.com/wkz
+[Travis]:            https://travis-ci.org/troglobit/uredir
+[Travis Status]:     https://travis-ci.org/troglobit/uredir.png?branch=master
 
 <!--
   -- Local Variables:
