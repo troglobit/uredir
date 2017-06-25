@@ -9,12 +9,11 @@ loopback.
 - In normal mode it forwards packets to a given destination and
   remembers the sender's address.  Packets received from the given
   destination are forwarded to the sender.
-- In echo mode `uredir` mirrors packets back to the sender.
 - In inetd mode `uredir` lingers for three (3) seconds after forwarding
   a reply.  This to prevent inetd from spawning new instances for
   multiple connections, e.g. an SNMP walk.
 
-Tested and used on Linux but should work on any POSIX system.
+Tested and built for Linux systems.
 
 For a TCP port redirector, see [redir](https://github.com/troglobit/redir/).
 
@@ -30,8 +29,6 @@ Usage
       -n      Run in foreground, do not detach from controlling terminal
       -s      Use syslog, even if running in foreground, default w/o -n
       -v      Show program version
-    
-    If DST:PORT is left out the program operates in echo mode.
 
 
 Example
