@@ -15,7 +15,6 @@
  */
 
 #include "config.h"
-#include <ev.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,13 +25,14 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <uev/uev.h>
 
 static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
 static char *prognm   = PACKAGE_NAME;
 
-int redirect(char *src, short src_port, char *dst, short dst_port);
+int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port);
 
 
 static int loglvl(char *level)
@@ -92,15 +92,15 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 	return atoi(ptr);
 }
 
-static void exit_cb(struct ev_loop *loop, ev_signal *w, int revents)
+static void exit_cb(uev_t *w, void *arg, int events)
 {
-	syslog(LOG_DEBUG, "Got signal %d, exiting.", w->signum);
-	ev_unloop(loop, EVUNLOOP_ALL);
+	syslog(LOG_DEBUG, "Got signal %d, exiting.", w->signo);
+	uev_exit(w->ctx);
 }
 
-static void timer_cb (struct ev_loop *loop, ev_timer *w, int revents)
+static void timer_cb(uev_t *w, void *arg, int events)
 {
-	ev_unloop(loop, EVUNLOOP_ALL);
+	uev_exit(w->ctx);
 }
 
 static char *progname(char *arg0)
@@ -123,7 +123,8 @@ int main(int argc, char *argv[])
 	int loglevel = LOG_NOTICE;
 	char *ident;
 	char src[20], dst[20];
-	ev_signal signal_watcher;
+	uev_t signal_watcher;
+	uev_ctx_t ctx;
 
 	ident = prognm = progname(argv[0]);
 	while ((c = getopt(argc, argv, "hiI:l:nsv")) != EOF) {
@@ -170,12 +171,12 @@ int main(int argc, char *argv[])
 	if (optind >= argc)
 		return usage(-2);
 
-	ev_signal_init(&signal_watcher, exit_cb, SIGALRM);
-	ev_signal_init(&signal_watcher, exit_cb, SIGHUP);
-	ev_signal_init(&signal_watcher, exit_cb, SIGINT);
-	ev_signal_init(&signal_watcher, exit_cb, SIGQUIT);
-	ev_signal_init(&signal_watcher, exit_cb, SIGTERM);
-	ev_signal_start(EV_DEFAULT, &signal_watcher);
+	uev_init(&ctx);
+	uev_signal_init(&ctx, &signal_watcher, exit_cb, NULL, SIGALRM);
+	uev_signal_init(&ctx, &signal_watcher, exit_cb, NULL, SIGHUP);
+	uev_signal_init(&ctx, &signal_watcher, exit_cb, NULL, SIGINT);
+	uev_signal_init(&ctx, &signal_watcher, exit_cb, NULL, SIGQUIT);
+	uev_signal_init(&ctx, &signal_watcher, exit_cb, NULL, SIGTERM);
 
 	if (inetd) {
 		/* In inetd mode we redirect from src=stdin to dst:port */
@@ -203,21 +204,18 @@ int main(int argc, char *argv[])
 	}
 
 	if (inetd) {
-		ev_timer timeout;
+		uev_t timeout;
 
-		ev_timer_init(&timeout, timer_cb, 3.0, 0.0);
-		ev_timer_start(EV_DEFAULT, &timeout);
+		uev_timer_init(&ctx, &timeout, timer_cb, NULL, 3000, 0);
 
-		if (redirect(NULL, 0, dst, dst_port))
+		if (redirect(&ctx, NULL, 0, dst, dst_port))
 			return 1;
 	} else {
-		if (redirect(src, src_port, dst, dst_port))
+		if (redirect(&ctx, src, src_port, dst, dst_port))
 			return 1;
 	}
 
-	ev_run(EV_DEFAULT, 0);
-
-	return 0;
+	return uev_run(&ctx, UEV_NONE);
 }
 
 /**

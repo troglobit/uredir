@@ -18,7 +18,6 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
-#include <ev.h>
 #include <fcntl.h>
 #include <linux/udp.h>
 #include <netinet/in.h>
@@ -30,6 +29,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <uev/uev.h>
 
 #define _d(_fmt, args...)					\
 	syslog(LOG_DEBUG, "dbg %-15s " _fmt, __func__, ##args)
@@ -40,15 +40,16 @@
 
 #define CBUFSIZ 512
 
-static ev_io outer_watcher;
+static uev_t outer_watcher;
 static struct sockaddr_in outer;
 static struct sockaddr_in inner;
 
 struct conn {
-	ev_io watcher;
 	LIST_ENTRY(conn) list;
 
-	int sd;
+	int    sd;
+	uev_t  watcher;
+
 
 	struct msghdr *hdr;
 	struct in_addr *local;
@@ -143,12 +144,10 @@ static void conn_dump(struct conn *c)
 	       inet_ntoa(*(c->local)), c->sd);
 }
 
-static void conn_to_outer(EV_P_ ev_io *w, int revents)
+static void conn_to_outer(uev_t *w, void *arg, int events)
 {
-	struct conn *c = (void *)w;
+	struct conn *c = (struct conn *)arg;
 	ssize_t n;
-
-	(void)(revents);
 
 	_d("");
 	conn_dump(c);
@@ -196,7 +195,7 @@ static struct conn *conn_find(struct msghdr *hdr)
 	return NULL;
 }
 
-static struct conn *conn_new(struct msghdr *hdr)
+static struct conn *conn_new(uev_ctx_t *ctx, struct msghdr *hdr)
 {
 	struct conn *c;
 
@@ -221,8 +220,7 @@ static struct conn *conn_new(struct msghdr *hdr)
 
 	LIST_INSERT_HEAD(&conns, c, list);
 
-	ev_io_init(&c->watcher, conn_to_outer, c->sd, EV_READ);
-	ev_io_start(EV_DEFAULT, &c->watcher);
+	uev_io_init(ctx, &c->watcher, conn_to_outer, c, c->sd, UEV_READ);
 
 	_d("");
 	conn_dump(c);
@@ -230,7 +228,7 @@ static struct conn *conn_new(struct msghdr *hdr)
 	return c;
 }
 
-static void outer_to_inner(EV_P_ ev_io *w, int revents)
+static void outer_to_inner(uev_t *w, void *arg, int events)
 {
 	struct msghdr *hdr;
 	struct conn *c;
@@ -246,7 +244,7 @@ static void outer_to_inner(EV_P_ ev_io *w, int revents)
 
 	c = conn_find(hdr);
 	if (!c) {
-		c = conn_new(hdr);
+		c = conn_new(w->ctx, hdr);
 		if (!c) {
 			hdr_free(hdr);
 			return;
@@ -281,7 +279,7 @@ static int outer_init(char *addr, short port)
 	return sd;
 }
 
-int redirect(char *src, short src_port, char *dst, short dst_port)
+int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port)
 {
 	int sd;
 
@@ -301,8 +299,7 @@ int redirect(char *src, short src_port, char *dst, short dst_port)
 			return 1;
 	}
 
-	ev_io_init(&outer_watcher, outer_to_inner, sd, EV_READ);
-	ev_io_start(EV_DEFAULT, &outer_watcher);
+	uev_io_init(ctx, &outer_watcher, outer_to_inner, NULL, sd, UEV_READ);
 
 	return 0;
 }
