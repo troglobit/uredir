@@ -41,6 +41,7 @@
 #define CBUFSIZ 512
 
 static ev_io outer_watcher;
+static struct sockaddr_in outer;
 static struct sockaddr_in inner;
 
 struct conn {
@@ -246,30 +247,36 @@ static int outer_init(struct sockaddr_in *addr)
 		return -1;
 
 	_d("ready\n");
+
+	return sd;
+}
+
+int redirect(char *src, short src_port, char *dst, short dst_port)
+{
+	int sd;
+
+	memset(&inner, 0, sizeof(inner));
+	inner.sin_family = AF_INET;
+	inet_aton(dst, &inner.sin_addr);
+	inner.sin_port = htons(dst_port);
+
+	memset(&outer, 0, sizeof(outer));
+	outer.sin_family = AF_INET;
+	inet_aton(src, &outer.sin_addr);
+	outer.sin_port = htons(src_port);
+	sd = outer_init(&outer);
+	if (sd < 0)
+		return 1;
+
 	ev_io_init(&outer_watcher, outer_to_inner, sd, EV_READ);
 	ev_io_start(EV_DEFAULT, &outer_watcher);
 
-	return 0;
+	return ev_run(EV_DEFAULT, 0);
 }
 
 int main(void)
 {
-	struct sockaddr_in addr = { 0 };
-	int err;
-
-	inner.sin_family = AF_INET;
-	inet_aton("127.0.0.1", &inner.sin_addr);
-	inner.sin_port = htons(40404);
-
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(4040);
-	err = outer_init(&addr);
-	if (err)
-		exit(1);
-
-	ev_run(EV_DEFAULT, 0);
-
-	return 0;
+	return redirect("0.0.0.0", 4040, "127.0.0.1", 40404);
 }
 
 /**
