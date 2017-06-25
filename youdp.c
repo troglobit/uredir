@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <ev.h>
+#include <fcntl.h>
 #include <linux/udp.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -260,13 +261,21 @@ int redirect(char *src, short src_port, char *dst, short dst_port)
 	inet_aton(dst, &inner.sin_addr);
 	inner.sin_port = htons(dst_port);
 
-	memset(&outer, 0, sizeof(outer));
-	outer.sin_family = AF_INET;
-	inet_aton(src, &outer.sin_addr);
-	outer.sin_port = htons(src_port);
-	sd = outer_init(&outer);
-	if (sd < 0)
-		return 1;
+	if (!src) {
+		/* Running as an inetd service */
+		sd = STDIN_FILENO;
+
+		/* Socket must be non-blocking for libev */
+		fcntl(sd, F_SETFL, fcntl(sd, F_GETFL) | O_NONBLOCK);
+	} else {
+		memset(&outer, 0, sizeof(outer));
+		outer.sin_family = AF_INET;
+		inet_aton(src, &outer.sin_addr);
+		outer.sin_port = htons(src_port);
+		sd = outer_init(&outer);
+		if (sd < 0)
+			return 1;
+	}
 
 	ev_io_init(&outer_watcher, outer_to_inner, sd, EV_READ);
 	ev_io_start(EV_DEFAULT, &outer_watcher);
