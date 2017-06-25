@@ -16,13 +16,10 @@ is a small tool to redirect UDP traffic.  It can be used as a poor man's
 filtering tool, e.g. for small multihomed embedded systems without a
 built-in firewall.
 .Pp
-In a normal mode it forwards packets to a specified destination
-remembering the sender's address, any packets received from the
-destination are in turn forwarded to the sender.
-.Pp
-In echo mode
 .Nm
-mirrors packets back to the sender.
+forwards packets to a specified destination remembering the sender's
+address, any packets received from the destination are in turn forwarded
+to the sender.
 .Pp
 When
 .Nm
@@ -32,11 +29,6 @@ it does not immediately exit when the first reply has been forwarded.
 Instead it lingers for three (3) seconds in case more requests are
 received, e.g. in the case of an SNMP walk.  This helps conserve
 precious system resources, useful in particular on embedded systems.
-.Pp
-It is possible to use
-.Nm
-in inetd mode with no arguments, i.e., in echo mode.  Which is
-completely untested.
 .Pp
 For a TCP port redirector, try
 .Xr redir 1 ,
@@ -65,8 +57,7 @@ Destination IP and UDP port to redirect to.
 .Sh EXAMPLE
 .Nf
 .Rs
-        uredir 0.0.0.0:53 192.168.0.1:53   # Normal mode
-        uredir 0.0.0.0:7                   # Echo mode
+        uredir 0.0.0.0:53 192.168.0.1:53
 .Re
 .Pp
 To run

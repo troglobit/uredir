@@ -31,7 +31,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-static int echo       = 0;
 static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
@@ -55,7 +54,7 @@ static int version(void)
 	return 0;
 }
 
-#define USAGE "Usage: %s [-hinsv] [-I NAME] [-l LEVEL] [SRC:PORT] [DST:PORT]"
+#define USAGE "Usage: %s [-hinsv] [-I NAME] [-l LEVEL] [SRC:PORT] DST:PORT"
 
 static int usage(int code)
 {
@@ -72,8 +71,7 @@ static int usage(int code)
 	printf("  -n      Run in foreground, do not detach from controlling terminal\n");
 	printf("  -s      Use syslog, even if running in foreground, default w/o -n\n");
 	printf("  -v      Show program version\n\n");
-	printf("If DST:PORT is left out the program operates in echo mode.\n"
-	       "Bug report address: %-40s\n\n", PACKAGE_BUGREPORT);
+	printf("Bug report address: %-40s\n\n", PACKAGE_BUGREPORT);
 
 	return code;
 }
@@ -103,8 +101,6 @@ static void exit_cb(int signo)
 
 /*
  * read from in, forward to out, creating a socket pipe ... or tube
- *
- * If no @dst is given then we're in echo mode, send everything back
  * If no @src is given then we should forward the reply
  */
 static int tuby(int sd, struct sockaddr_in *src, struct sockaddr_in *dst)
@@ -124,10 +120,6 @@ static int tuby(int sd, struct sockaddr_in *src, struct sockaddr_in *dst)
 	}
 
 	syslog(LOG_DEBUG, "Received %d bytes data from %s:%d", n, inet_ntop(AF_INET, &sa.sin_addr, addr, sn), ntohs(sa.sin_port));
-
-	/* Echo mode, return everything to sender */
-	if (!dst)
-		return sendto(sd, buf, n, 0, (struct sockaddr *)&sa, sn);
 
 	/* Verify the received packet is the actual reply before we forward it */
 	if (!src) {
@@ -238,12 +230,12 @@ int main(int argc, char *argv[])
 
 	/* If no dst, then user wants to echo everything back to src */
 	if (-1 == dst_port) {
-		echo = 1;
-	} else {
-		da.sin_family = AF_INET;
-		da.sin_addr.s_addr = inet_addr(dst);
-		da.sin_port = htons(dst_port);
+		fprintf(stderr, "Missing DST:PORT, aborting.\n");
+		return 1;
 	}
+	da.sin_family = AF_INET;
+	da.sin_addr.s_addr = inet_addr(dst);
+	da.sin_port = htons(dst_port);
 
 	if (inetd) {
 		sd = STDIN_FILENO;
@@ -277,9 +269,7 @@ int main(int argc, char *argv[])
 		if (inetd)
 			alarm(3);
 
-		if (echo)
-			tuby(sd, NULL, NULL);
-		else if (tuby(sd, &sa, &da))
+		if (tuby(sd, &sa, &da))
 			tuby(sd, NULL, &sa);
 	}
 
