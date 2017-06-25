@@ -25,18 +25,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#define _d(_fmt, ...)						\
-	fprintf(stderr, "dbg %-15s " _fmt, __func__,		\
-		##__VA_ARGS__)
+#define _d(_fmt, args...)					\
+	syslog(LOG_DEBUG, "dbg %-15s " _fmt, __func__, ##args)
 
-#define _e(_fmt, ...)						\
-	fprintf(stderr, "ERR %-15s " _fmt, __func__,		\
-		##__VA_ARGS__)
+#define _e(_fmt, args...)					\
+	syslog(LOG_ERR, "ERR %-15s " _fmt, __func__, ##args)
 
 
 #define CBUFSIZ 512
@@ -120,8 +119,10 @@ int sock_new(int *sock)
 
 	if (sd < 0) {
 		sd = socket(AF_INET, SOCK_DGRAM, 0);
-		if (sd < 0)
+		if (sd < 0) {
+			syslog(LOG_ERR, "Failed opening UDP socket: %m");
 			return -1;
+		}
 	}
 
 	/* Socket must be non-blocking for libev */
@@ -135,10 +136,11 @@ int sock_new(int *sock)
 	return 0;
 }
 
-static void conn_dump(struct conn *c, FILE *fp)
+static void conn_dump(struct conn *c)
 {
-	fprintf(fp, "remote:%s:%u ", inet_ntoa(c->remote->sin_addr), ntohs(c->remote->sin_port));
-	fprintf(fp, "local:%s sd:%d\n", inet_ntoa(*(c->local)), c->sd);
+	syslog(LOG_DEBUG, "remote:%s:%u local:%s sd:%d",
+	       inet_ntoa(c->remote->sin_addr), ntohs(c->remote->sin_port),
+	       inet_ntoa(*(c->local)), c->sd);
 }
 
 static void conn_to_outer(EV_P_ ev_io *w, int revents)
@@ -149,7 +151,7 @@ static void conn_to_outer(EV_P_ ev_io *w, int revents)
 	(void)(revents);
 
 	_d("");
-	conn_dump(c, stderr);
+	conn_dump(c);
 
 	n = recv(c->sd, c->hdr->msg_iov->iov_base, BUFSIZ, 0);
 	if (n <= 0) {
@@ -164,7 +166,7 @@ static void conn_to_outer(EV_P_ ev_io *w, int revents)
 static void conn_to_inner(struct conn *c, struct msghdr *hdr)
 {
 	_d("");
-	conn_dump(c, stderr);
+	conn_dump(c);
 
 	send(c->sd, hdr->msg_iov->iov_base, hdr->msg_iov->iov_len, 0);
 }
@@ -223,7 +225,7 @@ static struct conn *conn_new(struct msghdr *hdr)
 	ev_io_start(EV_DEFAULT, &c->watcher);
 
 	_d("");
-	conn_dump(c, stderr);
+	conn_dump(c);
 
 	return c;
 }
@@ -269,8 +271,10 @@ static int outer_init(char *addr, short port)
 	outer.sin_family = AF_INET;
 	inet_aton(addr, &outer.sin_addr);
 	outer.sin_port = htons(port);
-	if (bind(sd, (struct sockaddr *)&outer, sizeof(outer)))
+	if (bind(sd, (struct sockaddr *)&outer, sizeof(outer))) {
+		syslog(LOG_ERR, "Failed binding our address (%s:%d): %m", addr, port);
 		return -1;
+	}
 
 	_d("ready\n");
 
