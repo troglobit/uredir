@@ -113,6 +113,28 @@ struct in_addr *hdr_extract_da(struct msghdr *hdr)
 	return NULL;
 }
 
+int sock_new(int *sock)
+{
+	int sd = *sock;
+	int opt = 0;
+
+	if (sd < 0) {
+		sd = socket(AF_INET, SOCK_DGRAM, 0);
+		if (sd < 0)
+			return -1;
+	}
+
+	/* Socket must be non-blocking for libev */
+	fcntl(sd, F_SETFL, fcntl(sd, F_GETFL) | O_NONBLOCK);
+
+	/* At least on Linux the obnoxious IP_MULTICAST_ALL flag is set by default */
+	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_ALL, &opt, sizeof(opt));
+
+	*sock = sd;
+
+	return 0;
+}
+
 static void conn_dump(struct conn *c, FILE *fp)
 {
 	fprintf(fp, "remote:%s:%u ", inet_ntoa(c->remote->sin_addr), ntohs(c->remote->sin_port));
@@ -179,6 +201,7 @@ static struct conn *conn_new(struct msghdr *hdr)
 	c = malloc(sizeof(*c));
 	assert(c);
 
+	c->sd = -1;
 	c->hdr = hdr;
 	c->remote = hdr->msg_name;
 
@@ -186,8 +209,7 @@ static struct conn *conn_new(struct msghdr *hdr)
 	if (!c->local)
 		return NULL;
 
-	c->sd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-	if (c->sd < 0)
+	if (sock_new(&c->sd))
 		return NULL;
 
 	if (connect(c->sd, (struct sockaddr *)&inner, sizeof(inner))) {
@@ -235,10 +257,9 @@ static void outer_to_inner(EV_P_ ev_io *w, int revents)
 
 static int outer_init(struct sockaddr_in *addr)
 {
-	int sd, on = 1;
+	int sd = -1, on  = 1;
 
-	sd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-	if (sd < 0)
+	if (sock_new(&sd))
 		return -1;
 
 	if (setsockopt(sd, SOL_IP, IP_PKTINFO, &on, sizeof(on)))
@@ -264,9 +285,8 @@ int redirect(char *src, short src_port, char *dst, short dst_port)
 	if (!src) {
 		/* Running as an inetd service */
 		sd = STDIN_FILENO;
-
-		/* Socket must be non-blocking for libev */
-		fcntl(sd, F_SETFL, fcntl(sd, F_GETFL) | O_NONBLOCK);
+		if (sock_new(&sd))
+			return 1;
 	} else {
 		memset(&outer, 0, sizeof(outer));
 		outer.sin_family = AF_INET;
