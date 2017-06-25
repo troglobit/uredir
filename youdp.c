@@ -255,7 +255,7 @@ static void outer_to_inner(EV_P_ ev_io *w, int revents)
 	hdr_free(hdr);
 }
 
-static int outer_init(struct sockaddr_in *addr)
+static int outer_init(char *addr, short port)
 {
 	int sd = -1, on  = 1;
 
@@ -265,7 +265,11 @@ static int outer_init(struct sockaddr_in *addr)
 	if (setsockopt(sd, SOL_IP, IP_PKTINFO, &on, sizeof(on)))
 		return -1;
 
-	if (bind(sd, (struct sockaddr *)addr, sizeof(*addr)))
+	memset(&outer, 0, sizeof(outer));
+	outer.sin_family = AF_INET;
+	inet_aton(addr, &outer.sin_addr);
+	outer.sin_port = htons(port);
+	if (bind(sd, (struct sockaddr *)&outer, sizeof(outer)))
 		return -1;
 
 	_d("ready\n");
@@ -288,11 +292,7 @@ int redirect(char *src, short src_port, char *dst, short dst_port)
 		if (sock_new(&sd))
 			return 1;
 	} else {
-		memset(&outer, 0, sizeof(outer));
-		outer.sin_family = AF_INET;
-		inet_aton(src, &outer.sin_addr);
-		outer.sin_port = htons(src_port);
-		sd = outer_init(&outer);
+		sd = outer_init(src, src_port);
 		if (sd < 0)
 			return 1;
 	}
