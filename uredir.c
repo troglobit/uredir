@@ -98,6 +98,11 @@ static void exit_cb(struct ev_loop *loop, ev_signal *w, int revents)
 	ev_unloop(loop, EVUNLOOP_ALL);
 }
 
+static void timer_cb (struct ev_loop *loop, ev_timer *w, int revents)
+{
+	ev_unloop(loop, EVUNLOOP_ALL);
+}
+
 static char *progname(char *arg0)
 {
 	char *nm;
@@ -198,7 +203,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (inetd) {
-		alarm(3);
+		ev_timer timeout;
+
+		ev_timer_init(&timeout, timer_cb, 3.0, 0.0);
+		ev_timer_start(EV_DEFAULT, &timeout);
+
 		if (redirect(NULL, 0, dst, dst_port))
 			return 1;
 	} else {
