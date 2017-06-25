@@ -1,6 +1,6 @@
 UDP port redirector
 ===================
-[![Travis Status][]][Travis]
+[![Badge][]][ISC] [![Travis Status][]][Travis]
 
 `uredir` is a small [ISC][] licensed tool to redirect UDP connections.
 It can be used to forward connections on select external interfaces to
@@ -62,6 +62,7 @@ requests.
 now also maintained by Joachim.
 
 [ISC]:               https://en.wikipedia.org/wiki/ISC_license
+[Badge]:             https://img.shields.io/badge/License-ISC-blue.svg
 [Finit]:             https://github.com/troglobit/finit
 [GitHub]:            https://github.com/troglobit/uredir
 [udp_redirect.c]:    http://brokestream.com/udp_redirect.html
