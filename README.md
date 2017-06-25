@@ -21,14 +21,17 @@ For a TCP port redirector, see [redir](https://github.com/troglobit/redir/).
 Usage
 -----
 
-    uredir [-hinv] [-l LEVEL] [SRC:PORT] [DST:PORT]
+    uredir [-hinsv] [-I NAME] [-l LEVEL] [SRC:PORT] DST:PORT
     
       -h      Show this help text
       -i      Run in inetd mode, get SRC:PORT from stdin
+      -I NAME Identity, tag syslog messages with NAME, default: process name
       -l LVL  Set log level: none, err, info, notice (default), debug
       -n      Run in foreground, do not detach from controlling terminal
       -s      Use syslog, even if running in foreground, default w/o -n
       -v      Show program version
+
+     Bug report address: https://github.com/troglobit/uredir/issues
 
 
 Example
