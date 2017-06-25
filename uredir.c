@@ -15,6 +15,7 @@
  */
 
 #include "config.h"
+#include <ev.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -91,10 +92,10 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 	return atoi(ptr);
 }
 
-static void exit_cb(int signo)
+static void exit_cb(struct ev_loop *loop, ev_signal *w, int revents)
 {
-	syslog(LOG_DEBUG, "Got signal %d, exiting.", signo);
-	exit(0);
+	syslog(LOG_DEBUG, "Got signal %d, exiting.", w->signum);
+	ev_unloop(loop, EVUNLOOP_ALL);
 }
 
 static char *progname(char *arg0)
@@ -117,6 +118,7 @@ int main(int argc, char *argv[])
 	int loglevel = LOG_NOTICE;
 	char *ident;
 	char src[20], dst[20];
+	ev_signal signal_watcher;
 
 	ident = prognm = progname(argv[0]);
 	while ((c = getopt(argc, argv, "hiI:l:nsv")) != EOF) {
@@ -163,11 +165,12 @@ int main(int argc, char *argv[])
 	if (optind >= argc)
 		return usage(-2);
 
-	signal(SIGALRM, exit_cb);
-	signal(SIGHUP,  exit_cb);
-	signal(SIGINT,  exit_cb);
-	signal(SIGQUIT, exit_cb);
-	signal(SIGTERM, exit_cb);
+	ev_signal_init(&signal_watcher, exit_cb, SIGALRM);
+	ev_signal_init(&signal_watcher, exit_cb, SIGHUP);
+	ev_signal_init(&signal_watcher, exit_cb, SIGINT);
+	ev_signal_init(&signal_watcher, exit_cb, SIGQUIT);
+	ev_signal_init(&signal_watcher, exit_cb, SIGTERM);
+	ev_signal_start(EV_DEFAULT, &signal_watcher);
 
 	if (inetd) {
 		/* In inetd mode we redirect from src=stdin to dst:port */
@@ -196,10 +199,16 @@ int main(int argc, char *argv[])
 
 	if (inetd) {
 		alarm(3);
-		return redirect(NULL, 0, dst, dst_port);
+		if (redirect(NULL, 0, dst, dst_port))
+			return 1;
+	} else {
+		if (redirect(src, src_port, dst, dst_port))
+			return 1;
 	}
 
-	return redirect(src, src_port, dst, dst_port);
+	ev_run(EV_DEFAULT, 0);
+
+	return 0;
 }
 
 /**

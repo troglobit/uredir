@@ -304,7 +304,7 @@ int redirect(char *src, short src_port, char *dst, short dst_port)
 	ev_io_init(&outer_watcher, outer_to_inner, sd, EV_READ);
 	ev_io_start(EV_DEFAULT, &outer_watcher);
 
-	return ev_run(EV_DEFAULT, 0);
+	return 0;
 }
 
 /**
