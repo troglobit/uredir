@@ -9,4 +9,9 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_HEADER_STDC
 
+AC_CHECK_HEADER([ev.h],
+	AC_CHECK_LIB([ev], [ev_loop_new],,
+		AC_MSG_ERROR("libev not found")),
+	AC_MSG_ERROR("ev.h not found"))
+
 AC_OUTPUT

@@ -1,6 +1,5 @@
 bin_PROGRAMS    = uredir
 uredir_SOURCES  = uredir.c youdp.c
-uredir_LDADD    = -lev
 dist_man1_MANS  = uredir.1
 doc_DATA        = README.md LICENSE
 EXTRA_DIST      = $(doc_DATA)
