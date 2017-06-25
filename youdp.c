@@ -307,11 +307,6 @@ int redirect(char *src, short src_port, char *dst, short dst_port)
 	return ev_run(EV_DEFAULT, 0);
 }
 
-int main(void)
-{
-	return redirect("0.0.0.0", 4040, "127.0.0.1", 40404);
-}
-
 /**
  * Local Variables:
  *  indent-tabs-mode: t

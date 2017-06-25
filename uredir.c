@@ -1,22 +1,17 @@
 /*
- * Copyright (C) 2007-2008  Ivan Tikhonov <kefeer@brokestream.com>
- * Copyright (C) 2016  Joachim Nilsson <troglobit@gmail.com>
+ * Copyright (C) 2016-2017  Joachim Nilsson <troglobit@gmail.com>
  *
- * This software is provided 'as-is', without any express or implied
- * warranty.  In no event will the authors be held liable for any damages
- * arising from the use of this software.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "config.h"
@@ -35,6 +30,9 @@ static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
 static char *prognm   = PACKAGE_NAME;
+
+int redirect(char *src, short src_port, char *dst, short dst_port);
+
 
 static int loglvl(char *level)
 {
@@ -99,48 +97,6 @@ static void exit_cb(int signo)
 	exit(0);
 }
 
-/*
- * read from in, forward to out, creating a socket pipe ... or tube
- * If no @src is given then we should forward the reply
- */
-static int tuby(int sd, struct sockaddr_in *src, struct sockaddr_in *dst)
-{
-	int n;
-	char buf[BUFSIZ], addr[50];
-	struct sockaddr_in sa;
-	static struct sockaddr_in da;
-	socklen_t sn = sizeof(sa);
-
-	syslog(LOG_DEBUG, "Reading %s socket ...", src ? "client" : "proxy");
-	n = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr *)&sa, &sn);
-	if (n <= 0) {
-		if (n < 0)
-			syslog(LOG_ERR, "Failed receiving data: %m");
-		return 0;
-	}
-
-	syslog(LOG_DEBUG, "Received %d bytes data from %s:%d", n, inet_ntop(AF_INET, &sa.sin_addr, addr, sn), ntohs(sa.sin_port));
-
-	/* Verify the received packet is the actual reply before we forward it */
-	if (!src) {
-		if (sa.sin_addr.s_addr != da.sin_addr.s_addr || sa.sin_port != da.sin_port)
-			return 0;
-	} else {
-		*src = sa;	/* Tell callee who called */
-		da   = *dst;	/* Remember for forward of reply. */
-	}
-
-	syslog(LOG_DEBUG, "Forwarding %d bytes data to %s:%d", n, inet_ntop(AF_INET, &dst->sin_addr, addr, sizeof(*dst)), ntohs(dst->sin_port));
-	n = sendto(sd, buf, n, 0, (struct sockaddr *)dst, sizeof(*dst));
-	if (n <= 0) {
-		if (n < 0)
-			syslog(LOG_ERR, "Failed forwarding data: %m");
-		return 0;
-	}
-
-	return n;
-}
-
 static char *progname(char *arg0)
 {
 	char *nm;
@@ -156,14 +112,11 @@ static char *progname(char *arg0)
 
 int main(int argc, char *argv[])
 {
-	int c, sd, src_port, dst_port;
-	int opt = 0;
+	int c, src_port = 0, dst_port = 0;
 	int log_opts = LOG_CONS | LOG_PID;
 	int loglevel = LOG_NOTICE;
 	char *ident;
 	char src[20], dst[20];
-	struct sockaddr_in sa;
-	struct sockaddr_in da;
 
 	ident = prognm = progname(argv[0]);
 	while ((c = getopt(argc, argv, "hiI:l:nsv")) != EOF) {
@@ -233,47 +186,20 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Missing DST:PORT, aborting.\n");
 		return 1;
 	}
-	da.sin_family = AF_INET;
-	da.sin_addr.s_addr = inet_addr(dst);
-	da.sin_port = htons(dst_port);
+
+	if (background) {
+		if (-1 == daemon(0, 0)) {
+			syslog(LOG_ERR, "Failed daemonizing: %m");
+			return 2;
+		}
+	}
 
 	if (inetd) {
-		sd = STDIN_FILENO;
-	} else {
-		sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-		if (sd < 0) {
-			syslog(LOG_ERR, "Failed opening UDP socket: %m");
-			return 1;
-		}
-
-		sa.sin_family = AF_INET;
-		sa.sin_addr.s_addr = inet_addr(src);
-		sa.sin_port = htons(src_port);
-		if (bind(sd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
-			syslog(LOG_ERR, "Failed binding our address (%s:%d): %m", src, src_port);
-			return 1;
-		}
-
-		if (background) {
-			if (-1 == daemon(0, 0)) {
-				syslog(LOG_ERR, "Failed daemonizing: %m");
-				return 2;
-			}
-		}
+		alarm(3);
+		return redirect(NULL, 0, dst, dst_port);
 	}
 
-	/* At least on Linux the obnoxious IP_MULTICAST_ALL flag is set by default */
-	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_ALL, &opt, sizeof(opt));
-
-	while (1) {
-		if (inetd)
-			alarm(3);
-
-		if (tuby(sd, &sa, &da))
-			tuby(sd, NULL, &sa);
-	}
-
-	return 0;
+	return redirect(src, src_port, dst, dst_port);
 }
 
 /**
