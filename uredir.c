@@ -66,7 +66,7 @@ static int usage(int code)
 
 	printf(USAGE "\n\n"
 	       "  -h      Show this help text\n"
-	       "  -i      Run in inetd mode, get SRC:PORT from stdin\n"
+	       "  -i      Run in inetd mode, get SRC:PORT from stdin, implies -n\n"
 	       "  -I NAME Identity, tag syslog messages with NAME, default: %s\n"
 	       "  -l LVL  Set log level: none, err, info, notice (default), debug\n"
 	       "  -n      Run in foreground, do not detach from controlling terminal\n"
