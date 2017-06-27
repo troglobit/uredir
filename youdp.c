@@ -131,7 +131,7 @@ int sock_new(int *sock)
 		}
 	}
 
-	/* Socket must be non-blocking for libev */
+	/* Socket must be non-blocking for libev/libuEv */
 	fcntl(sd, F_SETFL, fcntl(sd, F_GETFL) | O_NONBLOCK);
 
 	/* At least on Linux the obnoxious IP_MULTICAST_ALL flag is set by default */
@@ -257,7 +257,7 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 
 static int outer_init(char *addr, short port)
 {
-	int sd = -1, on  = 1;
+	int sd = -1, on = 1;
 
 	if (sock_new(&sd))
 		return -1;
@@ -299,9 +299,7 @@ int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_por
 			return 1;
 	}
 
-	uev_io_init(ctx, &outer_watcher, outer_to_inner, NULL, sd, UEV_READ);
-
-	return 0;
+	return uev_io_init(ctx, &outer_watcher, outer_to_inner, NULL, sd, UEV_READ);
 }
 
 /**
