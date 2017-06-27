@@ -31,4 +31,4 @@ script:
   - tree /tmp/
   - ldd /tmp/bin/uredir
   - size /tmp/bin/uredir
-  - /tmp/bin/uredir -h
+  - LD_LIBRARY_PATH=/tmp/lib /tmp/bin/uredir -h
