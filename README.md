@@ -17,8 +17,6 @@ to an SNMP daemon on loopback.
   a reply.  This to prevent inetd from spawning new instances for
   multiple connections, e.g. an SNMP walk.
 
-Tested and built for Linux systems.
-
 For a TCP port redirector, see [redir][].
 
 
@@ -73,9 +71,3 @@ reporting bugs and an pull requests.
 [Joachim Nilsson]:   http://troglobit.com
 [Travis]:            https://travis-ci.org/troglobit/uredir
 [Travis Status]:     https://travis-ci.org/troglobit/uredir.png?branch=master
-
-<!--
-  -- Local Variables:
-  -- mode: markdown
-  -- End:
-  -->
