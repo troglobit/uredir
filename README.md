@@ -23,7 +23,7 @@ For a TCP port redirector, see [redir][].
 Usage
 -----
 
-    uredir [-hinsv] [-I NAME] [-l LEVEL] [SRC:PORT] DST:PORT
+    uredir [-hinsv] [-I NAME] [-l LEVEL] [-t SEC] [SRC:PORT] DST:PORT
     
       -h      Show this help text
       -i      Run in inetd mode, get SRC:PORT from stdin, implies -n
