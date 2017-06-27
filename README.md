@@ -15,7 +15,7 @@ loopback.
 
 Tested and built for Linux systems.
 
-For a TCP port redirector, see [redir](https://github.com/troglobit/redir/).
+For a TCP port redirector, see [redir][].
 
 
 Usage
@@ -55,23 +55,18 @@ Inetd example:
 Origin & References
 -------------------
 
-`uredir` was originally based on [udp_redirect.c][] by Ivan Tikhonov.
-For v3.0 the `tuby()` backend was replaced with the `youdp.c`, written
-by [Tobias Waldekranz][].  The project then also changed license from
-zlib to ISC.  The project is actively maintained by [Joachim Nilsson][]
-at [GitHub][], please use its interface for reporting bugs and an pull
-requests.
+The `uredir` project is open source under the [ISC][] license and
+actively maintained at [GitHub][].  Please use its interface for
+reporting bugs and an pull requests.
 
-`uredir` was heavily inspired by redir(1), originally by Sam Creasey but
-now also maintained by Joachim.
+`uredir` was heavily inspired by [redir(1)][redir], by Sam Creasey.
 
 [ISC]:               https://en.wikipedia.org/wiki/ISC_license
 [Badge]:             https://img.shields.io/badge/License-ISC-blue.svg
 [Finit]:             https://github.com/troglobit/finit
 [GitHub]:            https://github.com/troglobit/uredir
-[udp_redirect.c]:    http://brokestream.com/udp_redirect.html
+[redir]:             https://github.com/troglobit/redir/
 [Joachim Nilsson]:   http://troglobit.com
-[Tobias Waldekranz]: https://github.com/wkz
 [Travis]:            https://travis-ci.org/troglobit/uredir
 [Travis Status]:     https://travis-ci.org/troglobit/uredir.png?branch=master
 
