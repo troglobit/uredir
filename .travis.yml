@@ -16,6 +16,11 @@ addons:
       - tree
       - libev-dev
 
+install:
+  - wget https://github.com/troglobit/libuev/releases/download/v1.4.0/libuev-1.4.0.tar.xz
+  - tar xf libuev-1.4.0.tar.xz
+  - (cd libuev-1.4.0 && ./configure --prefix=/tmp && make && make install-strip)
+
 # Custom build script for the time being, no "make test" yet
 script:
   - ./autogen.sh
