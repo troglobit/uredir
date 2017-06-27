@@ -237,9 +237,11 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 
 	hdr = hdr_new();
 
-		exit(1);
 	len = recvmsg(w->fd, hdr, 0);
-	if (len == -1)
+	if (len == -1) {
+		_e("Failed receiving message: %m");
+		uev_exit(w->ctx);
+	}
 
 	c = conn_find(hdr);
 	if (!c) {
