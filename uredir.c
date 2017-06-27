@@ -31,6 +31,7 @@ static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
 static int timeout    = 3;
+static char *ident    = PACKAGE_NAME;
 static char *prognm   = PACKAGE_NAME;
 
 int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port);
@@ -63,16 +64,16 @@ static int usage(int code)
 		return code;
 	}
 
-	printf("\n" USAGE "\n\n", prognm);
-	printf("  -h      Show this help text\n");
-	printf("  -i      Run in inetd mode, get SRC:PORT from stdin\n");
-	printf("  -I NAME Identity, tag syslog messages with NAME, default: process name\n");
-	printf("  -l LVL  Set log level: none, err, info, notice (default), debug\n");
-	printf("  -n      Run in foreground, do not detach from controlling terminal\n");
-	printf("  -s      Use syslog, even if running in foreground, default w/o -n\n");
-	printf("  -t SEC  Set timeout to SEC seconds for inetd connections, default 3\n");
-	printf("  -v      Show program version\n\n");
-	printf("Bug report address: %-40s\n\n", PACKAGE_BUGREPORT);
+	printf(USAGE "\n\n"
+	       "  -h      Show this help text\n"
+	       "  -i      Run in inetd mode, get SRC:PORT from stdin\n"
+	       "  -I NAME Identity, tag syslog messages with NAME, default: %s\n"
+	       "  -l LVL  Set log level: none, err, info, notice (default), debug\n"
+	       "  -n      Run in foreground, do not detach from controlling terminal\n"
+	       "  -s      Use syslog, even if running in foreground, default w/o -n\n"
+	       "  -t SEC  Set timeout to SEC seconds for inetd connections, default 3\n"
+	       "  -v      Show program version\n\n"
+	       "Bug report address: %-40s\n\n", prognm, ident, PACKAGE_BUGREPORT);
 
 	return code;
 }
@@ -124,7 +125,6 @@ int main(int argc, char *argv[])
 	int c, src_port = 0, dst_port = 0;
 	int log_opts = LOG_CONS | LOG_PID;
 	int loglevel = LOG_NOTICE;
-	char *ident;
 	char src[20], dst[20];
 	uev_t sigalarm_watcher, sighup_watcher, sigint_watcher, sigquit_watcher, sigterm_watcher;
 	uev_ctx_t ctx;
