@@ -134,6 +134,7 @@ int main(int argc, char *argv[])
 
 		case 'i':
 			inetd = 1;
+			background = 0;
 			break;
 
 		case 'I':
