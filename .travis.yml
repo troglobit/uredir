@@ -27,7 +27,7 @@ script:
   - make clean
   - make V=1 -j5
   - make install-strip
-  - make distcheck
+  - PKG_CONFIG_PATH=/tmp/lib/pkgconfig make distcheck
   - tree /tmp/
   - ldd /tmp/bin/uredir
   - size /tmp/bin/uredir
