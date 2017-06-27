@@ -2,9 +2,13 @@ UDP port redirector
 ===================
 [![Badge][]][ISC] [![Travis Status][]][Travis]
 
-`uredir` is a small [ISC][] licensed tool to redirect UDP connections.
-It can be used to forward connections on select external interfaces to
-loopback.
+`uredir` is a small Linux daemon to redirect UDP connections.  It can be
+used to forward connections on small and embedded systems that do not
+have (or want to use) iptables.
+
+`uredir` can be used with the built-in inetd service in [Finit][] to
+listen for, e.g. SNMP connections, on some (safe) interfaces and forward
+to an SNMP daemon on loopback.
 
 - In normal mode it forwards packets to a given destination and
   remembers the sender's address.  Packets received from the given
