@@ -181,6 +181,9 @@ int main(int argc, char *argv[])
 		if (-1 == src_port)
 			return usage(-3);
 
+		if (strlen(src) < 7)
+			strncpy(src, "0.0.0.0", sizeof(src));
+
 		dst_port = parse_ipport(argv[optind], dst, sizeof(dst));
 	}
 
