@@ -66,17 +66,21 @@ inetd mode
 Destination IP and UDP port to redirect to
 .El
 .Sh EXAMPLE
-.Nf
+This simple UDP proxy example forwards inbound DNS requests on any
+interface to an external DNS server on 192.168.0.1.
+.Pp
 .Rs
         uredir :53 192.168.0.1:53
 .Re
 .Pp
 To run
 .Nm
-in inetd mode, e.g. to redirect SNMP requests, try the following:
+in inetd mode, e.g. to redirect SNMP requests, and timeout after 5 sec,
+try the following.  Runs in foreground, as required for inetd services,
+and uses syslog for logging:
 .Pp
 .Rs
-        snmp dgram udp wait root uredir -sit 5 127.0.0.1:16161
+        snmp dgram udp wait root uredir -it 5 127.0.0.1:16161
 .Re
 .Pp
 Syntax may vary between different inetd implementations and UNIX
