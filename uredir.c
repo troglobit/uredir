@@ -30,6 +30,7 @@
 static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
+static int timeout    = 3;
 static char *prognm   = PACKAGE_NAME;
 
 int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port);
@@ -53,7 +54,7 @@ static int version(void)
 	return 0;
 }
 
-#define USAGE "Usage: %s [-hinsv] [-I NAME] [-l LEVEL] [SRC:PORT] DST:PORT"
+#define USAGE "Usage: %s [-hinsv] [-I NAME] [-l LEVEL] [-t SEC] [SRC:PORT] DST:PORT"
 
 static int usage(int code)
 {
@@ -69,6 +70,7 @@ static int usage(int code)
 	printf("  -l LVL  Set log level: none, err, info, notice (default), debug\n");
 	printf("  -n      Run in foreground, do not detach from controlling terminal\n");
 	printf("  -s      Use syslog, even if running in foreground, default w/o -n\n");
+	printf("  -t SEC  Set timeout to SEC seconds for inetd connections, default 3\n");
 	printf("  -v      Show program version\n\n");
 	printf("Bug report address: %-40s\n\n", PACKAGE_BUGREPORT);
 
@@ -100,6 +102,7 @@ static void exit_cb(uev_t *w, void *arg, int events)
 
 static void timer_cb(uev_t *w, void *arg, int events)
 {
+	syslog(LOG_DEBUG, "Timeout, exiting.");
 	uev_exit(w->ctx);
 }
 
@@ -127,7 +130,7 @@ int main(int argc, char *argv[])
 	uev_ctx_t ctx;
 
 	ident = prognm = progname(argv[0]);
-	while ((c = getopt(argc, argv, "hiI:l:nsv")) != EOF) {
+	while ((c = getopt(argc, argv, "hiI:l:nst:v")) != EOF) {
 		switch (c) {
 		case 'h':
 			return usage(0);
@@ -154,6 +157,10 @@ int main(int argc, char *argv[])
 
 		case 's':
 			do_syslog++;
+			break;
+
+		case 't':
+			timeout = atoi(optarg);
 			break;
 
 		case 'v':
@@ -208,9 +215,9 @@ int main(int argc, char *argv[])
 	uev_signal_init(&ctx, &sigterm_watcher,  exit_cb, NULL, SIGTERM);
 
 	if (inetd) {
-		uev_t timeout;
+		uev_t timer_watcher;
 
-		uev_timer_init(&ctx, &timeout, timer_cb, NULL, 3000, 0);
+		uev_timer_init(&ctx, &timer_watcher, timer_cb, NULL, timeout * 1000, 0);
 
 		if (redirect(&ctx, NULL, 0, dst, dst_port))
 			return 1;
