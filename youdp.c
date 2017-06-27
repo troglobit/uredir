@@ -158,6 +158,7 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 
 	c->hdr->msg_iov->iov_len = n;
 	sendmsg(outer_watcher.fd, c->hdr, 0);
+	hdr_free(c->hdr);
 }
 
 static void conn_to_inner(struct conn *c, struct msghdr *hdr, ssize_t len)
@@ -249,7 +250,6 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 		}
 	}
 
-	hdr_free(hdr);
 	conn_to_inner(c, hdr, len);
 }
 
