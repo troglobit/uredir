@@ -54,6 +54,26 @@ Inetd example:
     snmp  dgram  udp  wait  root  /usr/sbin/tcpd /usr/local/bin/uredir -i 127.0.0.1:16161
 
 
+Build & Install
+---------------
+
+`uredir` is tailored for Linux systems and should build against any
+(old) C libray.  However, `uredir` v3.0 and later require an external
+library, [libuEv][].  Installing it should present no surprises since it
+too use a standard `configure` script and support `pkg-config`.  The
+latter is used by the `uredir` build to locate the library and header
+files.
+
+Hence, the regular `./configure && make` is usually sufficient to build
+`uredir`.  But if [libuEv][] is installed in non-standard location you
+may need to provide the path:
+
+```shell
+    PKG_CONFIG_PATH=/opt/lib/pkgconfig:/home/ian/lib/pkgconfig ./configure
+    make
+```
+
+
 Origin & References
 -------------------
 
@@ -63,11 +83,11 @@ reporting bugs and an pull requests.
 
 `uredir` was heavily inspired by [redir(1)][redir], by Sam Creasey.
 
-[ISC]:               https://en.wikipedia.org/wiki/ISC_license
-[Badge]:             https://img.shields.io/badge/License-ISC-blue.svg
-[Finit]:             https://github.com/troglobit/finit
-[GitHub]:            https://github.com/troglobit/uredir
-[redir]:             https://github.com/troglobit/redir/
-[Joachim Nilsson]:   http://troglobit.com
-[Travis]:            https://travis-ci.org/troglobit/uredir
-[Travis Status]:     https://travis-ci.org/troglobit/uredir.png?branch=master
+[ISC]:           https://en.wikipedia.org/wiki/ISC_license
+[Badge]:         https://img.shields.io/badge/License-ISC-blue.svg
+[Finit]:         https://github.com/troglobit/finit
+[GitHub]:        https://github.com/troglobit/uredir
+[redir]:         https://github.com/troglobit/redir/
+[libuEv]:        https://github.com/troglobit/libuev/
+[Travis]:        https://travis-ci.org/troglobit/uredir
+[Travis Status]: https://travis-ci.org/troglobit/uredir.png?branch=master
