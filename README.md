@@ -37,21 +37,24 @@ Usage
      Bug report address: https://github.com/troglobit/uredir/issues
 
 
-Example
--------
+Examples
+--------
 
-Command line examples:
+This simple UDP proxy example forwards inbound DNS requests on any
+interface to an external DNS server on 192.168.0.1:
 
     uredir :53 192.168.0.1:53
 
-To run `uredir` from a process monitor like [Finit][] or systemd, tell it
-to not background itself and to only use the syslog for log messages:
+To run `uredir` from a process monitor like [Finit][] or systemd, tell
+it to not background itself and to only use the syslog for log messages:
 
     uredir -ns :53 127.0.0.1:53
 
-Inetd example:
+To run `uredir` in inetd mode, e.g. to redirect SNMP requests, try the
+following.  Runs in foreground, as required for inetd services, and uses
+syslog for logging:
 
-    snmp  dgram  udp  wait  root  /usr/sbin/tcpd /usr/local/bin/uredir -i 127.0.0.1:16161
+    snmp  dgram  udp  wait  root  uredir -i 127.0.0.1:16161
 
 
 Build & Install
