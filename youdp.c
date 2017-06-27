@@ -160,12 +160,12 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	sendmsg(outer_watcher.fd, c->hdr, 0);
 }
 
-static void conn_to_inner(struct conn *c, struct msghdr *hdr)
+static void conn_to_inner(struct conn *c, struct msghdr *hdr, ssize_t len)
 {
 	_d("");
 	conn_dump(c);
 
-	send(c->sd, hdr->msg_iov->iov_base, hdr->msg_iov->iov_len, 0);
+	send(c->sd, hdr->msg_iov->iov_base, len, 0);
 }
 
 static struct conn *conn_find(struct msghdr *hdr)
@@ -230,15 +230,15 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 {
 	struct msghdr *hdr;
 	struct conn *c;
-	int res;
+	ssize_t len;
 
 	_d("\n");
 
 	hdr = hdr_new();
 
-	res = recvmsg(w->fd, hdr, 0);
-	if (res == -1)
 		exit(1);
+	len = recvmsg(w->fd, hdr, 0);
+	if (len == -1)
 
 	c = conn_find(hdr);
 	if (!c) {
@@ -249,8 +249,8 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 		}
 	}
 
-	conn_to_inner(c, hdr);
 	hdr_free(hdr);
+	conn_to_inner(c, hdr, len);
 }
 
 static int outer_init(char *addr, short port)
