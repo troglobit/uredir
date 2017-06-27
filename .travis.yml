@@ -14,7 +14,6 @@ addons:
   apt:
     packages:
       - tree
-      - libev-dev
 
 install:
   - wget https://github.com/troglobit/libuev/releases/download/v1.4.0/libuev-1.4.0.tar.xz
@@ -28,6 +27,7 @@ script:
   - make clean
   - make -j5 V=1
   - DESTDIR=/tmp/tok make install-strip
+  - make distheck
   - tree /tmp/tok
   - ldd /tmp/tok/bin/uredir
   - size /tmp/tok/bin/uredir
