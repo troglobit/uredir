@@ -7,7 +7,7 @@ doc_DATA        = README.md LICENSE
 EXTRA_DIST      = $(doc_DATA)
 
 ## Target to run when building a release
-release: dist
+release: distcheck
 	@for file in $(DIST_ARCHIVES); do	\
 		md5sum $$file > ../$$file.md5;	\
 	done
