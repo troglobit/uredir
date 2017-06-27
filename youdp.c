@@ -37,6 +37,11 @@
 #define _e(_fmt, args...)					\
 	syslog(LOG_ERR, "ERR %-15s " _fmt, __func__, ##args)
 
+#define conn_dump(c)						\
+	_d("remote:%s:%u", inet_ntoa(c->remote->sin_addr),	\
+	   ntohs(c->remote->sin_port));				\
+	_d("local:%s sd:%d", inet_ntoa(*(c->local)), c->sd);
+
 
 #define CBUFSIZ 512
 
@@ -135,13 +140,6 @@ int sock_new(int *sock)
 	*sock = sd;
 
 	return 0;
-}
-
-static void conn_dump(struct conn *c)
-{
-	syslog(LOG_DEBUG, "remote:%s:%u local:%s sd:%d",
-	       inet_ntoa(c->remote->sin_addr), ntohs(c->remote->sin_port),
-	       inet_ntoa(*(c->local)), c->sd);
 }
 
 static void conn_to_outer(uev_t *w, void *arg, int events)
