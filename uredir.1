@@ -7,9 +7,11 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl hinsv
-.Op Fl l Ar LEVEL
+.Op Fl I Ar ID
+.Op Fl l Ar LVL
+.Op Fl t Ar SEC
 .Op Ar SRC:PORT
-.Op Ar DST:PORT
+.Ar DST:PORT
 .Sh DESCRIPTION
 .Nm
 is a small tool to redirect UDP traffic.  It can be used as a poor man's
@@ -39,7 +41,11 @@ which now has the same maintainer as
 .It Fl h
 Print a summary of the options and exit
 .It Fl i
-Run in inetd mode, read data from stdin
+Run in inetd mode, read data from stdin.  Implies
+.Fl n ,
+always runs in foreground
+.It Fl I Ar ID
+Identity, tag syslog messages with the ID name, default: process name
 .It Fl l Ar LVL
 Set log level: none, err, info, notice (default), debug
 .It Fl n
@@ -47,17 +53,22 @@ Run in foreground, do not detach from controlling terminal
 .It Fl s
 Use syslog, even if running in foreground, default w/o
 .Fl n
+.It Fl t Ar SEC
+Set timeout to SEC seconds for inetd connections, default 3
 .It Fl v
 Show program version
 .It Ar SRC:PORT
-Source IP and UDP port to bind to, use 0.0.0.0 to bind to `INADDR_ANY`
+Source IP and UDP port to bind to, the SRC can be left out to default to
+0.0.0.0.  Must not be set when running in
+.Fl i ,
+inetd mode
 .It Ar DST:PORT
-Destination IP and UDP port to redirect to.
+Destination IP and UDP port to redirect to
 .El
 .Sh EXAMPLE
 .Nf
 .Rs
-        uredir 0.0.0.0:53 192.168.0.1:53
+        uredir :53 192.168.0.1:53
 .Re
 .Pp
 To run
@@ -65,7 +76,7 @@ To run
 in inetd mode, e.g. to redirect SNMP requests, try the following:
 .Pp
 .Rs
-        snmp dgram udp wait root uredir -n -s -i 127.0.0.1:16161
+        snmp dgram udp wait root uredir -sit 5 127.0.0.1:16161
 .Re
 .Pp
 Syntax may vary between different inetd implementations and UNIX
@@ -80,6 +91,7 @@ patches -- preferably as pull requests
 .Aq https://github.com/troglobit/uredir
 .Sh AUTHORS
 .Nm
-is a complete rewrite of
-.Nm udp_redirect ,
-made by Ivan Tikhonov.  Current maintainer is Joachim Nilsson.
+used to be based on
+.Nm udp_redirect
+by Ivan Tikhonov, but is today based on youdp by Tobias Waldekranz.
+Current maintainer is Joachim Nilsson.
