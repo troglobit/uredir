@@ -157,7 +157,7 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	}
 
 	c->hdr->msg_iov->iov_len = n;
-	sendmsg(outer_watcher.fd, c->hdr, 0);
+	sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0, c->hdr->msg_name, c->hdr->msg_namelen);
 	hdr_free(c->hdr);
 }
 
