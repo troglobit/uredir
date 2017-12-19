@@ -1,0 +1,24 @@
+Source: uredir
+Section: net
+Priority: optional
+Maintainer: Joachim Nilsson <troglobit@gmail.com>
+Homepage: https://github.com/troglobit/uredir
+Build-Depends: debhelper (>= 9~)
+Vcs-Git: https://github.com/troglobit/uredir.git
+Vcs-Browser: https://github.com/troglobit/uredir/commits/
+Standards-Version: 3.9.3
+
+Package: uredir
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Redirect UDP connections
+ uredir is a small Linux daemon for redirecting UDP connections.  It can
+ run under inetd or stand alone.
+ .
+ In normal mode it forwards packets to a given destination and remembers
+ the sender's address.  Packets received from the given destination are
+ forwarded to the sender.
+ .
+ In inetd mode uredir lingers for three (3) seconds after forwarding a
+ reply.  This to prevent inetd from spawning new instances for multiple
+ connections, e.g. an SNMP walk.

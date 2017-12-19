@@ -6,6 +6,9 @@ uredir_LDADD    = $(uev_LIBS)
 doc_DATA        = README.md LICENSE
 EXTRA_DIST      = $(doc_DATA)
 
+package:
+	dpkg-buildpackage -uc -us -B
+
 ## Target to run when building a release
 release: distcheck
 	@for file in $(DIST_ARCHIVES); do	\
