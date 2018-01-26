@@ -64,6 +64,8 @@ struct conn {
 LIST_HEAD(connhead, conn) conns;
 #define conn_foreach(_c) LIST_FOREACH(_c, &conns, list)
 
+void timer_reset(void);
+
 
 struct msghdr *hdr_new(void)
 {
@@ -156,6 +158,7 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 		return;
 	}
 
+	timer_reset();
 	c->hdr->msg_iov->iov_len = n;
 	sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0, c->hdr->msg_name, c->hdr->msg_namelen);
 	hdr_free(c->hdr);
@@ -252,6 +255,7 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 		}
 	}
 
+	timer_reset();
 	conn_to_inner(c, hdr, len);
 }
 

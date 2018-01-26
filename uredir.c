@@ -31,6 +31,7 @@ static int inetd      = 0;
 static int background = 1;
 static int do_syslog  = 1;
 static int timeout    = 3;
+static uev_t timer;
 static char *ident    = PACKAGE_NAME;
 static char *prognm   = PACKAGE_NAME;
 
@@ -105,6 +106,14 @@ static void timer_cb(uev_t *w, void *arg, int events)
 {
 	syslog(LOG_DEBUG, "Timeout, exiting.");
 	uev_exit(w->ctx);
+}
+
+void timer_reset(void)
+{
+	if (!inetd)
+		return;
+
+	uev_timer_set(&timer, timeout * 1000, 0);
 }
 
 static char *progname(char *arg0)
@@ -215,9 +224,7 @@ int main(int argc, char *argv[])
 	uev_signal_init(&ctx, &sigterm_watcher,  exit_cb, NULL, SIGTERM);
 
 	if (inetd) {
-		uev_t timer_watcher;
-
-		uev_timer_init(&ctx, &timer_watcher, timer_cb, NULL, timeout * 1000, 0);
+		uev_timer_init(&ctx, &timer, timer_cb, NULL, timeout * 1000, 0);
 
 		if (redirect(&ctx, NULL, 0, dst, dst_port))
 			return 1;
