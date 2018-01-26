@@ -123,7 +123,7 @@ struct in_addr *hdr_extract_da(struct msghdr *hdr)
 int sock_new(int *sock)
 {
 	int sd = *sock;
-	int opt = 0;
+	int opt = 0, on = 1;
 
 	if (sd < 0) {
 		sd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -137,11 +137,18 @@ int sock_new(int *sock)
 	fcntl(sd, F_SETFL, fcntl(sd, F_GETFL) | O_NONBLOCK);
 
 	/* At least on Linux the obnoxious IP_MULTICAST_ALL flag is set by default */
-	setsockopt(sd, IPPROTO_IP, IP_MULTICAST_ALL, &opt, sizeof(opt));
+	if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_ALL, &opt, sizeof(opt)))
+		goto error;
+
+	if (setsockopt(sd, SOL_IP, IP_PKTINFO, &on, sizeof(on)))
+		goto error;
 
 	*sock = sd;
-
 	return 0;
+
+error:
+	close(sd);
+	return -1;
 }
 
 static void conn_to_outer(uev_t *w, void *arg, int events)
@@ -261,12 +268,9 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 
 static int outer_init(char *addr, short port)
 {
-	int sd = -1, on = 1;
+	int sd = -1;
 
 	if (sock_new(&sd))
-		return -1;
-
-	if (setsockopt(sd, SOL_IP, IP_PKTINFO, &on, sizeof(on)))
 		return -1;
 
 	memset(&outer, 0, sizeof(outer));
