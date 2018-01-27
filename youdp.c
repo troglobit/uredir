@@ -171,14 +171,6 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	hdr_free(c->hdr);
 }
 
-static void conn_to_inner(struct conn *c, struct msghdr *hdr, ssize_t len)
-{
-	_d("");
-	conn_dump(c);
-
-	send(c->sd, hdr->msg_iov->iov_base, len, 0);
-}
-
 static struct conn *conn_find(struct msghdr *hdr)
 {
 	struct sockaddr_in *remote = hdr->msg_name;
@@ -263,7 +255,11 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 	}
 
 	timer_reset();
-	conn_to_inner(c, hdr, len);
+
+	_d("");
+	conn_dump(c);
+
+	send(c->sd, c->hdr->msg_iov->iov_base, len, 0);
 }
 
 static int outer_init(char *addr, short port)
