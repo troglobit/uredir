@@ -45,6 +45,9 @@
 
 #define CBUFSIZ 512
 
+extern int inetd;
+extern int timeout;
+
 static uev_t outer_watcher;
 static struct sockaddr_in outer;
 static struct sockaddr_in inner;
@@ -54,7 +57,7 @@ struct conn {
 
 	int    sd;
 	uev_t  watcher;
-
+	uev_t  timer;
 
 	struct msghdr *hdr;
 	struct in_addr local;
@@ -64,7 +67,6 @@ struct conn {
 LIST_HEAD(connhead, conn) conns;
 #define conn_foreach(_c) LIST_FOREACH(_c, &conns, list)
 
-void timer_reset(void);
 static void conn_del(struct conn *c);
 
 
@@ -101,6 +103,29 @@ void hdr_free(struct msghdr *hdr)
 	free(hdr->msg_control);
 	free(hdr->msg_name);
 	free(hdr);
+}
+
+static void timer_cb(uev_t *w, void *arg, int events)
+{
+	if (events & UEV_ERROR)
+		return;
+
+	if (!inetd) {
+		_d("Connection timeout, cleaning up.");
+		conn_del((struct conn *)arg);
+		return;
+	}
+
+	_d("Timeout, exiting.");
+	uev_exit(w->ctx);
+}
+
+void timer_reset(struct conn *c)
+{
+	if (!inetd)
+		return;
+
+	uev_timer_set(&c->timer, timeout * 1000, 0);
 }
 
 /* Peek into socket to figure out where an inbound packet comes from */
@@ -179,7 +204,7 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 		return;
 	}
 
-	timer_reset();
+	timer_reset(c);
 	c->hdr->msg_iov->iov_len = n;
 	sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0, c->hdr->msg_name, c->hdr->msg_namelen);
 }
@@ -240,6 +265,7 @@ static struct conn *conn_new(uev_ctx_t *ctx, struct in_addr *local, struct socka
 
 	LIST_INSERT_HEAD(&conns, c, list);
 
+	uev_timer_init(ctx, &c->timer, timer_cb, c, timeout * 1000, 0);
 	uev_io_init(ctx, &c->watcher, conn_to_outer, c, c->sd, UEV_READ);
 
 	_d("");
@@ -252,6 +278,9 @@ static void conn_del(struct conn *c)
 {
 	uev_io_stop(&c->watcher);
 	close(c->watcher.fd);
+
+	uev_timer_stop(&c->timer);
+
 	hdr_free(c->hdr);
 	LIST_REMOVE(c, list);
 	free(c);
@@ -289,7 +318,7 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 		return;
 	}
 
-	timer_reset();
+	timer_reset(c);
 
 	_d("");
 	conn_dump(c);

@@ -27,11 +27,11 @@
 #include <netinet/in.h>
 #include <uev/uev.h>
 
-static int inetd      = 0;
+int inetd   = 0;
+int timeout = 3;
+
 static int background = 1;
 static int do_syslog  = 1;
-static int timeout    = 3;
-static uev_t timer;
 static char *ident    = PACKAGE_NAME;
 static char *prognm   = PACKAGE_NAME;
 
@@ -73,7 +73,7 @@ static int usage(int code)
 	       "  -l LVL  Set log level: none, err, info, notice (default), debug\n"
 	       "  -n      Run in foreground, do not detach from controlling terminal\n"
 	       "  -s      Use syslog, even if running in foreground, default w/o -n\n"
-	       "  -t SEC  Set timeout to SEC seconds for inetd connections, default 3\n"
+	       "  -t SEC  Timeout for connections, default 3 seconds\n"
 	       "  -v      Show program version\n\n"
 	       "Bug report address: %-40s\n\n", prognm, ident, PACKAGE_BUGREPORT);
 
@@ -102,20 +102,6 @@ static void exit_cb(uev_t *w, void *arg, int events)
 	syslog(LOG_DEBUG, "Got signal %d, exiting.", w->signo);
 	redirect_exit();
 	uev_exit(w->ctx);
-}
-
-static void timer_cb(uev_t *w, void *arg, int events)
-{
-	syslog(LOG_DEBUG, "Timeout, exiting.");
-	uev_exit(w->ctx);
-}
-
-void timer_reset(void)
-{
-	if (!inetd)
-		return;
-
-	uev_timer_set(&timer, timeout * 1000, 0);
 }
 
 static char *progname(char *arg0)
@@ -226,8 +212,6 @@ int main(int argc, char *argv[])
 	uev_signal_init(&ctx, &sigterm_watcher,  exit_cb, NULL, SIGTERM);
 
 	if (inetd) {
-		uev_timer_init(&ctx, &timer, timer_cb, NULL, timeout * 1000, 0);
-
 		if (redirect(&ctx, NULL, 0, dst, dst_port))
 			return 1;
 	} else {
