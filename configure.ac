@@ -11,6 +11,6 @@ AC_PROG_INSTALL
 AC_HEADER_STDC
 
 # Check for required libraries
-PKG_CHECK_MODULES([uev],  [libuev >= 1.4.0])
+PKG_CHECK_MODULES([uev],  [libuev >= 2.1.1])
 
 AC_OUTPUT
