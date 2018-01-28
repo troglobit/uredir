@@ -178,7 +178,6 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	timer_reset();
 	c->hdr->msg_iov->iov_len = n;
 	sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0, c->hdr->msg_name, c->hdr->msg_namelen);
-	hdr_free(c->hdr);
 }
 
 static struct conn *conn_find(struct in_addr *local, struct sockaddr_in *remote)
