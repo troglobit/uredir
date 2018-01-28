@@ -40,7 +40,7 @@
 #define conn_dump(c)						\
 	_d("remote:%s:%u", inet_ntoa(c->remote->sin_addr),	\
 	   ntohs(c->remote->sin_port));				\
-	_d("local:%s sd:%d", inet_ntoa(*(c->local)), c->sd);
+	_d("local:%s sd:%d", inet_ntoa(c->local), c->sd);
 
 
 #define CBUFSIZ 512
@@ -57,7 +57,7 @@ struct conn {
 
 
 	struct msghdr *hdr;
-	struct in_addr *local;
+	struct in_addr local;
 	struct sockaddr_in *remote;
 };
 
@@ -102,19 +102,29 @@ void hdr_free(struct msghdr *hdr)
 	free(hdr);
 }
 
-struct in_addr *hdr_extract_da(struct msghdr *hdr)
+/* Peek into socket to figure out where an inbound packet comes from */
+static struct in_addr *peek(int sd, void *name, socklen_t len)
 {
-	struct in_pktinfo *pktinfo;
+	static char cmbuf[0x100];
+	struct msghdr msgh;
 	struct cmsghdr *cmsg;
 
-	if (!hdr->msg_controllen)
+	memset(&msgh, 0, sizeof(msgh));
+	msgh.msg_name = name;
+	msgh.msg_namelen = len;
+	msgh.msg_control = cmbuf;
+	msgh.msg_controllen = sizeof(cmbuf);
+
+	if (recvmsg(sd, &msgh, MSG_PEEK) < 0)
 		return NULL;
 
-	for (cmsg = CMSG_FIRSTHDR(hdr); cmsg; cmsg = CMSG_NXTHDR(hdr, cmsg)) {
-		if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
-			pktinfo = (struct in_pktinfo *)CMSG_DATA(cmsg);
-			return &pktinfo->ipi_spec_dst;
-		}
+	for (cmsg = CMSG_FIRSTHDR(&msgh); cmsg; cmsg = CMSG_NXTHDR(&msgh, cmsg)) {
+		struct in_pktinfo *ipi = (struct in_pktinfo *)CMSG_DATA(cmsg);
+
+		if (cmsg->cmsg_level != SOL_IP || cmsg->cmsg_type != IP_PKTINFO)
+			continue;
+
+		return &ipi->ipi_spec_dst;
 	}
 
 	return NULL;
@@ -171,22 +181,14 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	hdr_free(c->hdr);
 }
 
-static struct conn *conn_find(struct msghdr *hdr)
+static struct conn *conn_find(struct in_addr *local, struct sockaddr_in *remote)
 {
-	struct sockaddr_in *remote = hdr->msg_name;
-	struct in_addr *local;
 	struct conn *c;
-
-	local = hdr_extract_da(hdr);
-	if (!local) {
-		_d("missing\n");
-		return NULL;
-	}
 
 	conn_foreach(c) {
 		if (c->remote->sin_addr.s_addr == remote->sin_addr.s_addr &&
 		    c->remote->sin_port        == remote->sin_port        &&
-		    c->local->s_addr           == local->s_addr) {
+		    c->local.s_addr            == local->s_addr) {
 			_d("found\n");
 			return c;
 		}
@@ -196,9 +198,18 @@ static struct conn *conn_find(struct msghdr *hdr)
 	return NULL;
 }
 
-static struct conn *conn_new(uev_ctx_t *ctx, struct msghdr *hdr)
+static struct conn *conn_new(uev_ctx_t *ctx, struct in_addr *local, struct sockaddr_in *remote)
 {
+	struct msghdr *hdr;
 	struct conn *c;
+
+	hdr = hdr_new();
+	if (!hdr)
+		return NULL;
+
+	if (hdr->msg_namelen > sizeof(*remote))
+		hdr->msg_namelen = sizeof(*remote);
+	memcpy(hdr->msg_name, remote, hdr->msg_namelen);
 
 	c = malloc(sizeof(*c));
 	assert(c);
@@ -206,10 +217,8 @@ static struct conn *conn_new(uev_ctx_t *ctx, struct msghdr *hdr)
 	c->sd = -1;
 	c->hdr = hdr;
 	c->remote = hdr->msg_name;
+	c->local = *local;
 
-	c->local = hdr_extract_da(hdr);
-	if (!c->local)
-		return NULL;
 
 	if (sock_new(&c->sd))
 		return NULL;
@@ -231,27 +240,31 @@ static struct conn *conn_new(uev_ctx_t *ctx, struct msghdr *hdr)
 
 static void outer_to_inner(uev_t *w, void *arg, int events)
 {
-	struct msghdr *hdr;
+	struct sockaddr_in sin;
+	struct in_addr *local;
 	struct conn *c;
 	ssize_t len;
 
 	_d("\n");
-
-	hdr = hdr_new();
-
-	len = recvmsg(w->fd, hdr, 0);
-	if (len == -1) {
-		_e("Failed receiving message: %m");
+	local = peek(w->fd, &sin, sizeof(sin));
+	if (!local) {
+		_e("Failed peeking into message: %m");
 		uev_exit(w->ctx);
 	}
 
-	c = conn_find(hdr);
+	c = conn_find(local, &sin);
 	if (!c) {
-		c = conn_new(w->ctx, hdr);
+		c = conn_new(w->ctx, local, &sin);
 		if (!c) {
-			hdr_free(hdr);
+			_e("Failed allocating new connection: %m");
 			return;
 		}
+	}
+
+	len = recvmsg(w->fd, c->hdr, 0);
+	if (len == -1) {
+		_e("Failed receiving message: %m");
+		return;
 	}
 
 	timer_reset();
