@@ -306,6 +306,18 @@ static int outer_init(char *addr, short port)
 	return sd;
 }
 
+int redirect_exit(void)
+{
+	struct conn *c;
+
+	while (!LIST_EMPTY(&conns)) {
+		c = LIST_FIRST(&conns);
+		conn_del(c);
+	}
+
+	return uev_io_stop(&outer_watcher) || close(outer_watcher.fd);
+}
+
 int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port)
 {
 	int sd;

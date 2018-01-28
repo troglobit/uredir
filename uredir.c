@@ -36,6 +36,7 @@ static char *ident    = PACKAGE_NAME;
 static char *prognm   = PACKAGE_NAME;
 
 int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port);
+int redirect_exit(void);
 
 
 static int loglvl(char *level)
@@ -99,6 +100,7 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 static void exit_cb(uev_t *w, void *arg, int events)
 {
 	syslog(LOG_DEBUG, "Got signal %d, exiting.", w->signo);
+	redirect_exit();
 	uev_exit(w->ctx);
 }
 
