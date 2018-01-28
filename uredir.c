@@ -98,7 +98,6 @@ static int parse_ipport(char *arg, char *buf, size_t len)
 static void exit_cb(uev_t *w, void *arg, int events)
 {
 	syslog(LOG_DEBUG, "Got signal %d, exiting.", w->signo);
-	redirect_exit();
 	uev_exit(w->ctx);
 }
 
@@ -217,7 +216,8 @@ int main(int argc, char *argv[])
 			return 1;
 	}
 
-	return uev_run(&ctx, UEV_NONE);
+	uev_run(&ctx, UEV_NONE);
+	redirect_exit();
 }
 
 /**
