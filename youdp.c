@@ -168,6 +168,8 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	ssize_t n;
 
 	_d("");
+	if (events & UEV_ERROR)
+		return;
 	conn_dump(c);
 
 	n = recv(c->sd, c->hdr->msg_iov->iov_base, BUFSIZ, 0);
@@ -263,6 +265,9 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 	ssize_t len;
 
 	_d("\n");
+	if (events & UEV_ERROR)
+		return;
+
 	local = peek(w->fd, &sin, sizeof(sin));
 	if (!local) {
 		_e("Failed peeking into message: %m");
