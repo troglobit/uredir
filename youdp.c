@@ -213,19 +213,26 @@ static struct conn *conn_new(uev_ctx_t *ctx, struct in_addr *local, struct socka
 	memcpy(hdr->msg_name, remote, hdr->msg_namelen);
 
 	c = malloc(sizeof(*c));
-	assert(c);
+	if (!c) {
+		hdr_free(hdr);
+		return NULL;
+	}
 
 	c->sd = -1;
 	c->hdr = hdr;
 	c->remote = hdr->msg_name;
 	c->local = *local;
 
-
-	if (sock_new(&c->sd))
+	if (sock_new(&c->sd)) {
+		free(c);
+		hdr_free(hdr);
 		return NULL;
+	}
 
 	if (connect(c->sd, (struct sockaddr *)&inner, sizeof(inner))) {
 		close(c->sd);
+		free(c);
+		hdr_free(hdr);
 		return NULL;
 	}
 
