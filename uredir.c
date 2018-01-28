@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <uev/uev.h>
+#include "uredir.h"
 
 int inetd   = 0;
 int timeout = 3;
@@ -34,9 +35,6 @@ static int background = 1;
 static int do_syslog  = 1;
 static char *ident    = PACKAGE_NAME;
 static char *prognm   = PACKAGE_NAME;
-
-int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port);
-int redirect_exit(void);
 
 
 static int loglvl(char *level)
@@ -212,10 +210,10 @@ int main(int argc, char *argv[])
 	uev_signal_init(&ctx, &sigterm_watcher,  exit_cb, NULL, SIGTERM);
 
 	if (inetd) {
-		if (redirect(&ctx, NULL, 0, dst, dst_port))
+		if (redirect_init(&ctx, NULL, 0, dst, dst_port))
 			return 1;
 	} else {
-		if (redirect(&ctx, src, src_port, dst, dst_port))
+		if (redirect_init(&ctx, src, src_port, dst, dst_port))
 			return 1;
 	}
 

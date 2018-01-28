@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <uev/uev.h>
+#include "uredir.h"
 
 #define _d(_fmt, args...)					\
 	syslog(LOG_DEBUG, "dbg %-15s " _fmt, __func__, ##args)
@@ -45,9 +46,6 @@
 
 
 #define CBUFSIZ 512
-
-extern int inetd;
-extern int timeout;
 
 static uev_t outer_watcher;
 static struct sockaddr_in outer;
@@ -348,19 +346,7 @@ static int outer_init(char *addr, short port)
 	return sd;
 }
 
-int redirect_exit(void)
-{
-	struct conn *c;
-
-	while (!LIST_EMPTY(&conns)) {
-		c = LIST_FIRST(&conns);
-		conn_del(c);
-	}
-
-	return uev_io_stop(&outer_watcher) || close(outer_watcher.fd);
-}
-
-int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port)
+int redirect_init(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_port)
 {
 	int sd;
 
@@ -381,6 +367,18 @@ int redirect(uev_ctx_t *ctx, char *src, short src_port, char *dst, short dst_por
 	}
 
 	return uev_io_init(ctx, &outer_watcher, outer_to_inner, NULL, sd, UEV_READ);
+}
+
+int redirect_exit(void)
+{
+	struct conn *c;
+
+	while (!LIST_EMPTY(&conns)) {
+		c = LIST_FIRST(&conns);
+		conn_del(c);
+	}
+
+	return uev_io_stop(&outer_watcher) || close(outer_watcher.fd);
 }
 
 /**

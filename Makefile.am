@@ -1,6 +1,6 @@
 bin_PROGRAMS    = uredir
 dist_man1_MANS  = uredir.1
-uredir_SOURCES  = uredir.c youdp.c
+uredir_SOURCES  = uredir.c uredir.h youdp.c
 uredir_CFLAGS   = $(uev_CFLAGS)
 uredir_LDADD    = $(uev_LIBS)
 doc_DATA        = README.md LICENSE
