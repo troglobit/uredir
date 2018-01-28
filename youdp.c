@@ -65,6 +65,7 @@ LIST_HEAD(connhead, conn) conns;
 #define conn_foreach(_c) LIST_FOREACH(_c, &conns, list)
 
 void timer_reset(void);
+static void conn_del(struct conn *c);
 
 
 struct msghdr *hdr_new(void)
@@ -172,6 +173,7 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 	n = recv(c->sd, c->hdr->msg_iov->iov_base, BUFSIZ, 0);
 	if (n <= 0) {
 		_e("recv:%d\n", errno);
+		conn_del(c);
 		return;
 	}
 
@@ -235,6 +237,15 @@ static struct conn *conn_new(uev_ctx_t *ctx, struct in_addr *local, struct socka
 	conn_dump(c);
 
 	return c;
+}
+
+static void conn_del(struct conn *c)
+{
+	uev_io_stop(&c->watcher);
+	close(c->watcher.fd);
+	hdr_free(c->hdr);
+	LIST_REMOVE(c, list);
+	free(c);
 }
 
 static void outer_to_inner(uev_t *w, void *arg, int events)
