@@ -10,8 +10,8 @@
 .Op Fl I Ar ID
 .Op Fl l Ar LVL
 .Op Fl t Ar SEC
-.Op Ar SRC:PORT
-.Ar DST:PORT
+.Op Ar [SRC]:PORT
+.Ar [DST]:PORT
 .Sh DESCRIPTION
 .Nm
 is a small tool to redirect UDP traffic.  It can be used as a poor man's
@@ -54,16 +54,15 @@ Run in foreground, do not detach from controlling terminal
 Use syslog, even if running in foreground, default w/o
 .Fl n
 .It Fl t Ar SEC
-Set timeout to SEC seconds for inetd connections, default 3
+Set timeout to SEC seconds for connections, default 3
 .It Fl v
 Show program version
-.It Ar SRC:PORT
-Source IP and UDP port to bind to, the SRC can be left out to default to
-0.0.0.0.  Must not be set when running in
-.Fl i ,
-inetd mode
-.It Ar DST:PORT
-Destination IP and UDP port to redirect to
+.It Ar [SRC]:PORT
+Source, or outer/public, IP and UDP port to bind to, the SRC can be left
+out to default to 0.0.0.0.  Must not be set when running in inet mode,
+.Fl i
+.It Ar [DST]:PORT
+Destination, or inner/private, IP and UDP port to redirect to
 .El
 .Sh EXAMPLE
 This simple UDP proxy example forwards inbound DNS requests on any

@@ -31,7 +31,7 @@ Usage
       -l LVL  Set log level: none, err, info, notice (default), debug
       -n      Run in foreground, do not detach from controlling terminal
       -s      Use syslog, even if running in foreground, default w/o -n
-      -t SEC  Set timeout to SEC seconds for inetd connections, default 3
+      -t SEC  Timeout for connections, default 3 seconds
       -v      Show program version
 
      Bug report address: https://github.com/troglobit/uredir/issues
