@@ -1,3 +1,17 @@
+uredir (3.2) unstable; urgency=medium
+
+  * New upstream release
+  * Fixes:
+    - Runtime memory leaks
+    - Error handling in callbacks
+  * Changes:
+    - Updated requirement: libuEv v2.1.1, or later
+    - Deletes all connections properly on exit, valgrind
+    - Use MSG_PEEK to reduce runtime memory allocation
+    - Connection timers rather than session timeout
+
+ -- Joachim Nilsson <troglobit@gmail.com>  Sun, 28 Jan 2018 21:52:06 +0100
+
 uredir (3.1-1) unstable; urgency=medium
 
   * Initial Debian Release
