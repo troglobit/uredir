@@ -121,6 +121,7 @@ static void timer_cb(uev_t *w, void *arg, int events)
 
 void timer_reset(struct conn *c)
 {
+	_d("");
 	uev_timer_set(&c->timer, timeout * 1000, 0);
 }
 
