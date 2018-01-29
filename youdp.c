@@ -311,6 +311,7 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 		c = conn_new(w->ctx, local, &sin);
 		if (!c) {
 			_e("Failed allocating new connection: %m");
+			uev_exit(w->ctx);
 			return;
 		}
 	}
