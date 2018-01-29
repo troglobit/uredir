@@ -67,6 +67,7 @@ LIST_HEAD(connhead, conn) conns;
 #define conn_foreach(_c) LIST_FOREACH(_c, &conns, list)
 
 static void conn_del(struct conn *c);
+static void conn_end(struct conn *c);
 
 
 struct msghdr *hdr_new(void)
@@ -196,18 +197,24 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 		uev_exit(w->ctx);
 		return;
 	}
-	conn_dump(c);
 
 	n = recv(c->sd, c->hdr->msg_iov->iov_base, BUFSIZ, 0);
 	if (n <= 0) {
-		_e("recv:%d\n", errno);
-		conn_del(c);
+		_e("recv: %m");
+		conn_end(c);
 		return;
 	}
 
-	timer_reset(c);
 	c->hdr->msg_iov->iov_len = n;
-	sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0, c->hdr->msg_name, c->hdr->msg_namelen);
+	if (sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0,
+		   c->hdr->msg_name, c->hdr->msg_namelen) == -1) {
+		_e("sendto: %m");
+		conn_end(c);
+		return;
+	}
+
+	conn_dump(c);
+	timer_reset(c);
 }
 
 static struct conn *conn_find(struct in_addr *local, struct sockaddr_in *remote)
@@ -287,6 +294,16 @@ static void conn_del(struct conn *c)
 	free(c);
 }
 
+static void conn_end(struct conn *c)
+{
+	conn_del(c);
+	if (!inetd)
+		return;
+
+	if (LIST_EMPTY(&conns))
+		uev_exit(c->watcher.ctx);
+}
+
 static void outer_to_inner(uev_t *w, void *arg, int events)
 {
 	struct sockaddr_in sin;
@@ -302,8 +319,9 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 
 	local = peek(w->fd, &sin, sizeof(sin));
 	if (!local) {
-		_e("Failed peeking into message: %m");
-		uev_exit(w->ctx);
+		if (inetd)
+			uev_exit(w->ctx);
+		return;
 	}
 
 	c = conn_find(local, &sin);
@@ -318,16 +336,17 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 
 	len = recvmsg(w->fd, c->hdr, 0);
 	if (len == -1) {
-		_e("Failed receiving message: %m");
+		conn_end(c);
 		return;
 	}
-
-	timer_reset(c);
 
 	_d("");
 	conn_dump(c);
 
-	send(c->sd, c->hdr->msg_iov->iov_base, len, 0);
+	if (send(c->sd, c->hdr->msg_iov->iov_base, len, 0) == -1)
+		conn_end(c);
+	else
+		timer_reset(c);
 }
 
 static int outer_init(char *addr, short port)
