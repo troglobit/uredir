@@ -163,7 +163,7 @@ int sock_new(int *sock)
 	if (sd < 0) {
 		sd = socket(AF_INET, SOCK_DGRAM, 0);
 		if (sd < 0) {
-			syslog(LOG_ERR, "Failed opening UDP socket: %m");
+			_e("Failed opening UDP socket: %m");
 			return -1;
 		}
 	}
@@ -341,7 +341,7 @@ static int outer_init(char *addr, short port)
 	inet_aton(addr, &outer.sin_addr);
 	outer.sin_port = htons(port);
 	if (bind(sd, (struct sockaddr *)&outer, sizeof(outer))) {
-		syslog(LOG_ERR, "Failed binding our address (%s:%d): %m", addr, port);
+		_e("Failed binding to %s:%d: %m", addr, port);
 		return -1;
 	}
 
