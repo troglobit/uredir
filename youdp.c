@@ -33,11 +33,11 @@
 #include <uev/uev.h>
 #include "uredir.h"
 
-#define _d(_fmt, args...)					\
-	syslog(LOG_DEBUG, "dbg %-15s " _fmt, __func__, ##args)
+#define _d(fmt, args...)					\
+	syslog(LOG_DEBUG, "DBG %-15s " fmt, __func__, ##args)
 
-#define _e(_fmt, args...)					\
-	syslog(LOG_ERR, "ERR %-15s " _fmt, __func__, ##args)
+#define _e(fmt, args...)					\
+	syslog(LOG_ERR, "ERR %-15s " fmt, __func__, ##args)
 
 #define conn_dump(c)						\
 	_d("remote:%s:%u", inet_ntoa(c->remote->sin_addr),	\
