@@ -211,7 +211,7 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 		return;
 	}
 	if (n > DATA_BUFSIZE)
-		_e("Received truncated data %d < %d", DATA_BUFSIZE, n);
+		_e("Received truncated data %d < %zd", DATA_BUFSIZE, n);
 
 	if (sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0,
 		   c->hdr->msg_name, c->hdr->msg_namelen) == -1) {
