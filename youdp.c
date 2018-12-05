@@ -209,9 +209,9 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 		_e("recv: %m");
 		conn_end(c);
 		return;
-	} else if (n > DATA_BUFSIZE) {
-		_e("Received truncated data %d < %d", DATA_BUFSIZE, n);
 	}
+	if (n > DATA_BUFSIZE)
+		_e("Received truncated data %d < %d", DATA_BUFSIZE, n);
 
 	if (sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0,
 		   c->hdr->msg_name, c->hdr->msg_namelen) == -1) {
@@ -337,17 +337,15 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 	}
 
 	c = conn_find(local, &sin);
-	if (c != NULL) {
-		conn_renew(c);
-
-	} else {
+	if (!c) {
 		c = conn_new(w->ctx, local, &sin);
 		if (!c) {
 			_e("Failed allocating new connection: %m");
 			uev_exit(w->ctx);
 			return;
 		}
-	}
+	} else
+		conn_renew(c);
 
 	len = recvmsg(w->fd, c->hdr, 0);
 	if (len == -1) {
