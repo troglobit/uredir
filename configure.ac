@@ -1,4 +1,4 @@
-AC_INIT([uredir], [3.2], [https://github.com/troglobit/uredir/issues])
+AC_INIT([uredir], [3.3-beta1], [https://github.com/troglobit/uredir/issues])
 AM_INIT_AUTOMAKE([1.11 foreign])
 AM_SILENT_RULES([yes])
 
