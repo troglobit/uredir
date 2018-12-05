@@ -45,7 +45,8 @@
 	_d("local:%s sd:%d", inet_ntoa(c->local), c->sd);
 
 
-#define CBUFSIZ 512
+#define CONTROL_BUFSIZE 512
+#define DATA_BUFSIZE BUFSIZ
 
 static uev_t outer_watcher;
 static struct sockaddr_in outer;
@@ -69,6 +70,13 @@ LIST_HEAD(connhead, conn) conns;
 static void conn_del(struct conn *c);
 static void conn_end(struct conn *c);
 
+void hdr_reset_buffer_sizes(struct msghdr* hdr)
+{
+	hdr->msg_namelen = sizeof(struct sockaddr_in);
+	hdr->msg_controllen = CONTROL_BUFSIZE;
+	hdr->msg_iovlen = 1;
+	hdr->msg_iov->iov_len = DATA_BUFSIZE;
+}
 
 struct msghdr *hdr_new(void)
 {
@@ -78,20 +86,18 @@ struct msghdr *hdr_new(void)
 	assert(hdr);
 
 	hdr->msg_name = malloc(sizeof(struct sockaddr_in));
-	hdr->msg_namelen = sizeof(struct sockaddr_in);
 	assert(hdr->msg_name);
 
-	hdr->msg_control = malloc(CBUFSIZ);
-	hdr->msg_controllen = CBUFSIZ;
+	hdr->msg_control = malloc(CONTROL_BUFSIZE);
 	assert(hdr->msg_control);
 
 	hdr->msg_iov = malloc(sizeof(struct iovec));
-	hdr->msg_iovlen = 1;
 	assert(hdr->msg_iov);
 
-	hdr->msg_iov->iov_base = malloc(BUFSIZ);
-	hdr->msg_iov->iov_len = BUFSIZ;
+	hdr->msg_iov->iov_base = malloc(DATA_BUFSIZE);
 	assert(hdr->msg_iov->iov_base);
+
+	hdr_reset_buffer_sizes(hdr);
 
 	return hdr;
 }
@@ -198,14 +204,15 @@ static void conn_to_outer(uev_t *w, void *arg, int events)
 		return;
 	}
 
-	n = recv(c->sd, c->hdr->msg_iov->iov_base, BUFSIZ, 0);
+	n = recv(c->sd, c->hdr->msg_iov->iov_base, DATA_BUFSIZE, MSG_TRUNC);
 	if (n <= 0) {
 		_e("recv: %m");
 		conn_end(c);
 		return;
+	} else if (n > DATA_BUFSIZE) {
+		_e("Received truncated data %d < %d", DATA_BUFSIZE, n);
 	}
 
-	c->hdr->msg_iov->iov_len = n;
 	if (sendto(outer_watcher.fd, c->hdr->msg_iov->iov_base, n, 0,
 		   c->hdr->msg_name, c->hdr->msg_namelen) == -1) {
 		_e("sendto: %m");
@@ -282,6 +289,11 @@ static struct conn *conn_new(uev_ctx_t *ctx, struct in_addr *local, struct socka
 	return c;
 }
 
+static void conn_renew(struct conn *c)
+{
+	hdr_reset_buffer_sizes(c->hdr);
+}
+
 static void conn_del(struct conn *c)
 {
 	uev_io_stop(&c->watcher);
@@ -325,7 +337,10 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 	}
 
 	c = conn_find(local, &sin);
-	if (!c) {
+	if (c != NULL) {
+		conn_renew(c);
+
+	} else {
 		c = conn_new(w->ctx, local, &sin);
 		if (!c) {
 			_e("Failed allocating new connection: %m");
@@ -338,6 +353,14 @@ static void outer_to_inner(uev_t *w, void *arg, int events)
 	if (len == -1) {
 		conn_end(c);
 		return;
+	} else if (c->hdr->msg_flags != 0) {
+		_e("Received message with flag = 0x%X."
+		   "(MSG_EOR=0x%X, MSG_TRUNC=0x%X, MSG_CTRUNC=0x%X, MSG_OOB=0x%X)",
+			c->hdr->msg_flags,
+			MSG_EOR,
+			MSG_TRUNC,
+			MSG_CTRUNC,
+			MSG_OOB);
 	}
 
 	_d("");
