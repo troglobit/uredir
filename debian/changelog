@@ -6,7 +6,7 @@ uredir (3.3) unstable; urgency=medium
       reqeust reduced the buffer size which meant the replies were
       truncated.  Fixed by Mattias Martinsson
 
- -- Joachim Nilsson <troglobit@gmail.com>  Wed, 05 Dec 2018 07:50:42 +0100
+ -- Joachim Nilsson <troglobit@gmail.com>  Mon, 03 Jun 2019 18:19:10 +0200
 
 uredir (3.2) unstable; urgency=medium
 
