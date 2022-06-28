@@ -58,7 +58,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y build-essential autoconf automake dpkg-dev debhelper \
-                             devscripts libsystemd-dev systemd pkg-config
+                             devscripts libsystemd-dev systemd pkg-config wget
           wget https://github.com/troglobit/libuev/releases/download/v2.3.2/libuev-2.3.2.tar.xz
           tar xf libuev-2.3.2.tar.xz
           (cd libuev-2.3.2 && ./configure --prefix=/usr && make && sudo make install-strip)
