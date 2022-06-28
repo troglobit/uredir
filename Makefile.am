@@ -7,7 +7,7 @@ doc_DATA        = README.md LICENSE
 EXTRA_DIST      = $(doc_DATA)
 
 package:
-	dpkg-buildpackage -uc -us -B
+	@debuild -uc -us -B --lintian-opts --profile debian -i -I
 
 ## Target to run when building a release
 release: distcheck
